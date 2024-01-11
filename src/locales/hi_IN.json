@@ -18,8 +18,9 @@
     "enabling_subheader": "अपना पासवर्ड बनाने के लिए <strong>हस्ताक्षर करें</strong> क्लिक करें। जब भी आप अपना इनबॉक्स एक्सेस करेंगे तो आपको <strong>साइन करें</strong> क्लिक करने के लिए कहा जाएगा।"
   },
   "messages": {
-    "filter_none": "सभी मेसेज",
-    "filter_requests": "मेसेज अनुरोध",
+    "filter_allowed": "संदेशों",
+    "filter_requests": "अनुरोध",
+    "filter_blocked": "अवरोधित",
     "convos_empty_header": "कोई मेसेज नहीं? कोई समस्या नहीं।",
     "convos_empty_subheader": "डीएम के साथ बातचीत शुरू करें, जिसके आप मालिक हैं और जिसे आप नियंत्रित करते हैं।",
     "convos_empty_button": "अपना पहला मेसेज भेजें",
