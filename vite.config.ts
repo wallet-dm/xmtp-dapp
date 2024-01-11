@@ -6,6 +6,6 @@ import pluginRewriteAll from "vite-plugin-rewrite-all";
 export default defineConfig({
   plugins: [react(), pluginRewriteAll()],
   optimizeDeps: {
-    exclude: ['@xmtp/user-preferences-bindings-wasm'],
+    exclude: ["@xmtp/user-preferences-bindings-wasm"],
   },
 });

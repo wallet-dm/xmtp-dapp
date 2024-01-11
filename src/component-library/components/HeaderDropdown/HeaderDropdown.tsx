@@ -3,13 +3,13 @@
 import { Dialog, Transition } from "@headlessui/react";
 import { ChevronDownIcon, CogIcon } from "@heroicons/react/outline";
 import { CheckCircleIcon, PlusIcon } from "@heroicons/react/solid";
+import type { ConsentState } from "@xmtp/react-sdk";
+import i18next from "i18next";
 import { Fragment, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import i18next from "i18next";
 import { classNames } from "../../../helpers";
-import { IconButton } from "../IconButton/IconButton";
 import { useXmtpStore } from "../../../store/xmtp";
-import { ConsentState } from "@xmtp/react-sdk";
+import { IconButton } from "../IconButton/IconButton";
 
 interface HeaderDropdownProps {
   /**
@@ -43,11 +43,10 @@ interface HeaderDropdownProps {
 }
 
 const consentStateLabels = {
-  allowed: 'messages.filter_allowed',
-  denied: 'messages.filter_blocked',
-  unknown: 'messages.filter_requests',
+  allowed: "messages.filter_allowed",
+  denied: "messages.filter_blocked",
+  unknown: "messages.filter_requests",
 };
-
 
 export const HeaderDropdown = ({
   dropdownOptions,
@@ -63,7 +62,8 @@ export const HeaderDropdown = ({
   const [isOpen, setIsOpen] = useState(false);
   const setConsentFilter = useXmtpStore((s) => s.setConsentFilter);
   const consentFilter = useXmtpStore((s) => s.consentFilter);
-  const [currentlySelected, setCurrentlySelected] = useState<ConsentState>(consentFilter);
+  const [currentlySelected, setCurrentlySelected] =
+    useState<ConsentState>(consentFilter);
 
   useEffect(() => {
     setCurrentlySelected(consentFilter);
@@ -77,7 +77,9 @@ export const HeaderDropdown = ({
       className="border-l border-r border-b border-gray-200 bg-gray-100 h-16 p-4 pt-5">
       <div className="flex justify-between items-center">
         <span className="flex" onClick={() => setIsOpen(!isOpen)}>
-          <h1 className="font-bold text-lg mr-2">{defaultSelected ?? t(consentStateLabels[currentlySelected])}</h1>
+          <h1 className="font-bold text-lg mr-2">
+            {defaultSelected ?? t(consentStateLabels[currentlySelected])}
+          </h1>
           {!disabled && <ChevronDownIcon width="24" />}
         </span>
         {(recipientInput || isMobileView) && (
@@ -100,7 +102,7 @@ export const HeaderDropdown = ({
               <div
                 id="headerModalId"
                 className="p-4 border border-gray-100 rounded-lg max-w-fit">
-                {(dropdownOptions).map((value) => (
+                {dropdownOptions.map((value) => (
                   <div key={value} className="flex w-full justify-between">
                     <div className="flex">
                       <CogIcon width={24} className="text-gray-300 mr-4" />
