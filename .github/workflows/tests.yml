@@ -1,6 +1,9 @@
 name: Unit Tests
 
-on: [pull_request]
+on:
+  pull_request:
+    branches:
+      - main-wallet-dm
 
 jobs:
   jest-and-cypress-components:
