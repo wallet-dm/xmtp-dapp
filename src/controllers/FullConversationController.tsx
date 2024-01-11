@@ -12,6 +12,7 @@ import {
 } from "@xmtp/react-sdk";
 import { isSameDay } from "date-fns";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { DateDivider } from "../component-library/components/DateDivider/DateDivider";
 import { FullConversation } from "../component-library/components/FullConversation/FullConversation";
 import { GhostButton } from "../component-library/components/GhostButton/GhostButton";
@@ -21,7 +22,6 @@ import { updateConversationIdentity } from "../helpers/conversation";
 import { isMessageSupported } from "../helpers/isMessagerSupported";
 import { useXmtpStore } from "../store/xmtp";
 import { FullMessageController } from "./FullMessageController";
-import { useTranslation } from "react-i18next";
 
 type FullConversationControllerProps = {
   conversation: CachedConversation;
