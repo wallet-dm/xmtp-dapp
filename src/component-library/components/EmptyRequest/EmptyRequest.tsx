@@ -18,6 +18,7 @@ export const EmptyRequest = () => {
           removeQrCodeBehindLogo
           logoPadding={10}
           value={`${window.location.origin}/dm/${walletAddress}`}
+          logoPaddingStyle="circle"
         />
       </div>
       <div
