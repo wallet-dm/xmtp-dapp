@@ -1,6 +1,9 @@
 name: Code Format Checks
 
-on: [pull_request]
+on:
+  pull_request:
+    branches:
+      - main-wallet-dm
 
 jobs:
   eslint:
