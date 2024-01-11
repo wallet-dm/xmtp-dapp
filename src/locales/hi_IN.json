@@ -18,13 +18,15 @@
     "enabling_subheader": "अपना पासवर्ड बनाने के लिए <strong>हस्ताक्षर करें</strong> क्लिक करें। जब भी आप अपना इनबॉक्स एक्सेस करेंगे तो आपको <strong>साइन करें</strong> क्लिक करने के लिए कहा जाएगा।"
   },
   "messages": {
-    "filter_none": "सभी मेसेज",
-    "filter_requests": "मेसेज अनुरोध",
+    "filter_allowed": "संदेशों",
+    "filter_requests": "अनुरोध",
+    "filter_blocked": "अवरोधित",
     "convos_empty_header": "कोई मेसेज नहीं? कोई समस्या नहीं।",
     "convos_empty_subheader": "डीएम के साथ बातचीत शुरू करें, जिसके आप मालिक हैं और जिसे आप नियंत्रित करते हैं।",
     "convos_empty_button": "अपना पहला मेसेज भेजें",
     "convos_empty_recipient_placeholder": "नया प्राप्तकर्ता",
     "convos_empty_text_placeholder": "नया मेसेज",
+    "convos_empty_blocker_header": "अवरुद्ध उपयोगकर्ता और अस्वीकृत अनुरोध यहां दिखाई देंगे। आप किसी भी समय उन्हें अनब्लॉक या पुनर्स्थापित कर सकते हैं।",
     "messages_empty_header": "XMTP ब्रह्माण्ड की खोज करें",
     "messages_empty_subheader": "आरंभ करें",
     "messages_empty_cta_1_header": "मेसेज भेजें",
@@ -38,7 +40,9 @@
     "address_field_invalid": "कृपया वैध 0x वॉलेट या .eth पता दर्ज करें",
     "address_field_not_on_network": "क्षमा करें, हम इस पते को मेसेज नहीं भेज सकते क्योंकि इसके स्वामी ने अभी तक XMTP के साथ इसका उपयोग नहीं किया है",
     "message_field_prompt": "मेसेज लिखें",
-    "conversation_start": "यह बातचीत की शुरुआत है"
+    "conversation_start": "यह बातचीत की शुरुआत है",
+    "conversation_accept_prompt": "{{address}} से संदेश अनुरोध स्वीकार करें?",
+    "conversation_denied": "आपने {{address}} के संदेश अनुरोध को अस्वीकार कर दिया है."
   },
   "menu": {
     "collapse_header": "संक्षिप्त करें",
@@ -58,7 +62,9 @@
     "share_code": "XMTP नेटवर्क की शक्ति को अपने मित्रों, परिवार और सहकर्मियों के साथ साझा करें",
     "share_link": "अपने शेयर लिंक को कॉपी करें",
     "share_qr_code": "क्यूआर कोड साझा करें",
-    "report_bug": "बग रिपोर्ट करो"
+    "report_bug": "बग रिपोर्ट करो",
+    "allow": "स्वीकार करना",
+    "deny": "अस्वीकार करना"
   },
   "aria_labels": {
     "address_input": "पता इनपुट",

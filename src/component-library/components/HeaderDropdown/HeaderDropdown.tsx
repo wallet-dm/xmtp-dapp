@@ -3,21 +3,23 @@
 import { Dialog, Transition } from "@headlessui/react";
 import { ChevronDownIcon, CogIcon } from "@heroicons/react/outline";
 import { CheckCircleIcon, PlusIcon } from "@heroicons/react/solid";
+import type { ConsentState } from "@xmtp/react-sdk";
+import i18next from "i18next";
 import { Fragment, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import i18next from "i18next";
 import { classNames } from "../../../helpers";
+import { useXmtpStore } from "../../../store/xmtp";
 import { IconButton } from "../IconButton/IconButton";
 
 interface HeaderDropdownProps {
   /**
    * What options does the user have to change?
    */
-  dropdownOptions?: Array<string>;
+  dropdownOptions: Array<ConsentState>;
   /**
    * What is currently selected?
    */
-  defaultSelected?: string;
+  defaultSelected?: ConsentState;
   /**
    * What happens on change?
    */
@@ -40,6 +42,12 @@ interface HeaderDropdownProps {
   isMobileView?: boolean;
 }
 
+const consentStateLabels = {
+  allowed: "messages.filter_allowed",
+  denied: "messages.filter_blocked",
+  unknown: "messages.filter_requests",
+};
+
 export const HeaderDropdown = ({
   dropdownOptions,
   defaultSelected,
@@ -52,12 +60,13 @@ export const HeaderDropdown = ({
   const { t } = useTranslation();
 
   const [isOpen, setIsOpen] = useState(false);
-  const [currentlySelected, setCurrentlySelected] = useState(
-    defaultSelected || t("messages.filter_none"),
-  );
+  const setConsentFilter = useXmtpStore((s) => s.setConsentFilter);
+  const consentFilter = useXmtpStore((s) => s.consentFilter);
+  const [currentlySelected, setCurrentlySelected] =
+    useState<ConsentState>(consentFilter);
 
   useEffect(() => {
-    setCurrentlySelected(defaultSelected || t("messages.filter_none"));
+    setCurrentlySelected(consentFilter);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [i18next.language]);
 
@@ -68,7 +77,9 @@ export const HeaderDropdown = ({
       className="border-l border-r border-b border-gray-200 bg-gray-100 h-16 p-4 pt-5">
       <div className="flex justify-between items-center">
         <span className="flex" onClick={() => setIsOpen(!isOpen)}>
-          <h1 className="font-bold text-lg mr-2">{currentlySelected}</h1>
+          <h1 className="font-bold text-lg mr-2">
+            {defaultSelected ?? t(consentStateLabels[currentlySelected])}
+          </h1>
           {!disabled && <ChevronDownIcon width="24" />}
         </span>
         {(recipientInput || isMobileView) && (
@@ -91,13 +102,8 @@ export const HeaderDropdown = ({
               <div
                 id="headerModalId"
                 className="p-4 border border-gray-100 rounded-lg max-w-fit">
-                {(
-                  dropdownOptions || [
-                    t("messages.filter_none"),
-                    t("messages.filter_requests"),
-                  ]
-                ).map((item) => (
-                  <div key={item} className="flex w-full justify-between">
+                {dropdownOptions.map((value) => (
+                  <div key={value} className="flex w-full justify-between">
                     <div className="flex">
                       <CogIcon width={24} className="text-gray-300 mr-4" />
                       <button
@@ -105,19 +111,20 @@ export const HeaderDropdown = ({
                         onClick={() => {
                           onChange?.();
                           setIsOpen(false);
-                          // setCurrentlySelected?.();
+                          setCurrentlySelected(value);
+                          setConsentFilter(value);
                         }}
                         className={classNames(
                           "cursor-pointer",
                           "my-1",
                           "outline-none",
-                          item === currentlySelected ? "font-bold my-1" : "",
+                          value === currentlySelected ? "font-bold my-1" : "",
                         )}>
-                        {item}
+                        {t(consentStateLabels[value])}
                       </button>
                     </div>
                     <div className="flex items-center">
-                      {item === currentlySelected && (
+                      {value === currentlySelected && (
                         <CheckCircleIcon
                           fill="limegreen"
                           width="24"

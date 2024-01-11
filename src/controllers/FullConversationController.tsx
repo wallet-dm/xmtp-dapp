@@ -1,23 +1,27 @@
 /* eslint-disable @typescript-eslint/no-unsafe-argument */
 /* eslint-disable @typescript-eslint/no-unsafe-member-access */
-import {
-  useMessages,
-  type CachedConversation,
-  useDb,
-  ContentTypeId,
-} from "@xmtp/react-sdk";
-import { useEffect, useMemo, useRef, useState } from "react";
-import { isSameDay } from "date-fns";
+import { XCircleIcon } from "@heroicons/react/solid";
 import { ContentTypeReply } from "@xmtp/content-type-reply";
 import type { EffectType } from "@xmtp/experimental-content-type-screen-effect";
+import {
+  ContentTypeId,
+  useConsent,
+  useDb,
+  useMessages,
+  type CachedConversation,
+} from "@xmtp/react-sdk";
+import { isSameDay } from "date-fns";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { DateDivider } from "../component-library/components/DateDivider/DateDivider";
 import { FullConversation } from "../component-library/components/FullConversation/FullConversation";
-import { FullMessageController } from "./FullMessageController";
-import { isMessageSupported } from "../helpers/isMessagerSupported";
-import { updateConversationIdentity } from "../helpers/conversation";
-import SnowEffect from "../component-library/components/ScreenEffects/SnowEffect";
+import { GhostButton } from "../component-library/components/GhostButton/GhostButton";
 import RainEffect from "../component-library/components/ScreenEffects/RainEffect";
+import SnowEffect from "../component-library/components/ScreenEffects/SnowEffect";
+import { updateConversationIdentity } from "../helpers/conversation";
+import { isMessageSupported } from "../helpers/isMessagerSupported";
 import { useXmtpStore } from "../store/xmtp";
+import { FullMessageController } from "./FullMessageController";
 
 type FullConversationControllerProps = {
   conversation: CachedConversation;
@@ -29,10 +33,12 @@ export const FullConversationController: React.FC<
   const lastMessageDateRef = useRef<Date>();
   const renderedDatesRef = useRef<Date[]>([]);
   const [effect, setEffect] = useState<EffectType | undefined>(undefined);
-
   const { db } = useDb();
+  const { t } = useTranslation();
+  const { consentState, allow, deny } = useConsent();
   const [messageId, setMessageId] = useState<string>("");
   const conversationTopic = useXmtpStore((s) => s.conversationTopic);
+  const setConversationTopic = useXmtpStore((s) => s.setConversationTopic);
 
   useEffect(() => {
     void updateConversationIdentity(conversation, db);
@@ -113,6 +119,51 @@ export const FullConversationController: React.FC<
         <RainEffect messageId={messageId} key={messageId} />
       ) : null}
       <FullConversation isLoading={isLoading} messages={messagesWithDates} />
+      {/* TODO: Move this to a component */}
+      {consentState(conversation.peerAddress) === "unknown" ? (
+        <div className="text-gray-500 font-regular text-sm w-full text-center">
+          <div className="flex justify-center items-center py-2">
+            {t("messages.conversation_accept_prompt", {
+              address: conversation.peerAddress,
+            })}
+          </div>
+          <div className="flex justify-around">
+            <div>
+              <GhostButton
+                label={t("common.allow")}
+                onClick={() => {
+                  void allow([conversation.peerAddress]);
+                  setConversationTopic("");
+                }}
+              />
+              <GhostButton
+                variant="secondary"
+                icon={<XCircleIcon width={24} />}
+                label={t("common.deny")}
+                onClick={() => {
+                  void deny([conversation.peerAddress]);
+                  setConversationTopic("");
+                }}
+              />
+            </div>
+          </div>
+        </div>
+      ) : consentState(conversation.peerAddress) === "denied" ? (
+        <>
+          <div className="text-wrap break-words overflow-hidden flex justify-center items-center text-gray-500 font-regular text-sm w-full py-2 text-center">
+            {t("messages.conversation_denied", {
+              address: conversation.peerAddress,
+            })}
+          </div>
+          <GhostButton
+            label={t("common.allow")}
+            onClick={() => {
+              void allow([conversation.peerAddress]);
+              setConversationTopic("");
+            }}
+          />
+        </>
+      ) : null}
     </div>
   );
 };

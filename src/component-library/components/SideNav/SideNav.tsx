@@ -241,6 +241,7 @@ const SideNav = ({
                   removeQrCodeBehindLogo
                   logoPadding={10}
                   value={`${window.location.origin}/dm/${walletAddress ?? ""}`}
+                  logoPaddingStyle="circle"
                 />
               </div>
               <div
