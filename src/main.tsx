@@ -9,7 +9,6 @@ import {
   reactionContentTypeConfig,
   replyContentTypeConfig,
 } from "@xmtp/react-sdk";
-import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import { WagmiConfig } from "wagmi";
 import { celo, mainnet } from "wagmi/chains";

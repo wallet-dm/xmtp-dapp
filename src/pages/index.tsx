@@ -1,12 +1,12 @@
-import { useEffect, useMemo } from "react";
-import { useAccount, useDisconnect } from "wagmi";
+import { useWeb3Modal } from "@web3modal/wagmi/react";
 import { useClient } from "@xmtp/react-sdk";
+import { useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
+import { useAccount, useDisconnect } from "wagmi";
 import { OnboardingStep } from "../component-library/components/OnboardingStep/OnboardingStep";
 import { classNames, isAppEnvDemo, wipeKeys } from "../helpers";
 import useInitXmtpClient from "../hooks/useInitXmtpClient";
 import { useXmtpStore } from "../store/xmtp";
-import { useWeb3Modal } from "@web3modal/wagmi/react";
 
 const OnboardingPage = () => {
   const navigate = useNavigate();

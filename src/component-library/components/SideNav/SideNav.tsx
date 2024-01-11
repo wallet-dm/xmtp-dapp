@@ -47,7 +47,7 @@ type Lang = {
 };
 
 const SideNav = ({
-  icon = <CogIcon width={'32'}/>,
+  icon = <CogIcon width="32"/>,
   displayAddress,
   walletAddress,
   avatarUrl,
