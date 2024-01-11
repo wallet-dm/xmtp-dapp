@@ -1,18 +1,18 @@
 import { useEffect, useMemo } from "react";
 import { useAccount, useDisconnect } from "wagmi";
-import { useConnectModal } from "@rainbow-me/rainbowkit";
 import { useClient } from "@xmtp/react-sdk";
 import { useNavigate } from "react-router-dom";
 import { OnboardingStep } from "../component-library/components/OnboardingStep/OnboardingStep";
 import { classNames, isAppEnvDemo, wipeKeys } from "../helpers";
 import useInitXmtpClient from "../hooks/useInitXmtpClient";
 import { useXmtpStore } from "../store/xmtp";
+import { useWeb3Modal } from "@web3modal/wagmi/react";
 
 const OnboardingPage = () => {
   const navigate = useNavigate();
   const resetXmtpState = useXmtpStore((state) => state.resetXmtpState);
   const { address } = useAccount();
-  const { openConnectModal } = useConnectModal();
+  const { open } = useWeb3Modal();
   const { client, isLoading, status, setStatus, resolveCreate, resolveEnable } =
     useInitXmtpClient();
   const { reset: resetWagmi, disconnect: disconnectWagmi } = useDisconnect();
@@ -52,7 +52,7 @@ const OnboardingPage = () => {
       <OnboardingStep
         step={step}
         isLoading={isLoading}
-        onConnect={openConnectModal}
+        onConnect={open}
         onCreate={resolveCreate}
         onEnable={resolveEnable}
         onDisconnect={() => {
