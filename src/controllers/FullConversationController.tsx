@@ -150,7 +150,7 @@ export const FullConversationController: React.FC<
         </div>
       ) : consentState(conversation.peerAddress) === "denied" ? (
         <>
-          <div className="flex justify-center items-center text-gray-500 font-regular text-sm w-full py-2 text-center">
+          <div className="text-wrap break-words overflow-hidden flex justify-center items-center text-gray-500 font-regular text-sm w-full py-2 text-center">
             {t("messages.conversation_denied", {
               address: conversation.peerAddress,
             })}
