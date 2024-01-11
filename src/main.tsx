@@ -35,7 +35,7 @@ const contentTypeConfigs = [
 ];
 
 // Required field as of WalletConnect v2.
-const projectId = "2e0aa029f1ce655dfdbb0abe644ca24a"
+const projectId = import.meta.env.VITE_PROJECT_ID
 const metadata = {
   name: 'Wallet DM',
   description: 'A Chat App for Crypto Enthusiasts',
