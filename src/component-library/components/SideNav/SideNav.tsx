@@ -47,7 +47,7 @@ type Lang = {
 };
 
 const SideNav = ({
-  icon = <CogIcon width={'32'}/>,
+  icon = <CogIcon width="32" />,
   displayAddress,
   walletAddress,
   avatarUrl,
@@ -186,20 +186,20 @@ const SideNav = ({
           </div>
         </div>
       </div>
-      <div className={
-        classNames(
-          "flex", 
+      <div
+        className={classNames(
+          "flex",
           "justify-start",
           "items-start",
-          "font-bold", 
-          "mb-8", 
+          "font-bold",
+          "mb-8",
           "hover:bg-gray-200",
-          "rounded-lg", 
-          "p-2", 
-          "h-fit", 
+          "rounded-lg",
+          "p-2",
+          "h-fit",
           "text-gray-500",
-          "w-12"
-          )}>
+          "w-12",
+        )}>
         <div
           role="button"
           onClick={onXmtpIconClick}
