@@ -24,6 +24,6 @@ HeaderDropdownOpenDefault.args = {
 
 export const HeaderDropdownDifferentOption = Template.bind({});
 HeaderDropdownDifferentOption.args = {
-  defaultSelected: "Message requests",
+  defaultSelected: "allowed",
   onChange: () => {},
 };

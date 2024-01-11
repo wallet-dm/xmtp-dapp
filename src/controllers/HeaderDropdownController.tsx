@@ -2,6 +2,7 @@ import { HeaderDropdown } from "../component-library/components/HeaderDropdown/H
 import { TAILWIND_MD_BREAKPOINT } from "../helpers";
 import useWindowSize from "../hooks/useWindowSize";
 import { useXmtpStore } from "../store/xmtp";
+import { ConsentState } from "@xmtp/react-sdk";
 
 export const HeaderDropdownController = () => {
   const resetRecipient = useXmtpStore((s) => s.resetRecipient);
@@ -12,13 +13,13 @@ export const HeaderDropdownController = () => {
 
   return (
     <HeaderDropdown
+      dropdownOptions={[ "allowed", "unknown", "denied" ] as ConsentState[]}
       recipientInput={recipientInput}
       onClick={() => {
         resetRecipient();
         setConversationTopic();
         setStartedFirstMessage(true);
       }}
-      disabled
       isMobileView={width <= TAILWIND_MD_BREAKPOINT}
     />
   );
