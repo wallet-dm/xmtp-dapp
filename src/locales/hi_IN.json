@@ -26,6 +26,7 @@
     "convos_empty_button": "अपना पहला मेसेज भेजें",
     "convos_empty_recipient_placeholder": "नया प्राप्तकर्ता",
     "convos_empty_text_placeholder": "नया मेसेज",
+    "convos_empty_blocker_header": "अवरुद्ध उपयोगकर्ता और अस्वीकृत अनुरोध यहां दिखाई देंगे। आप किसी भी समय उन्हें अनब्लॉक या पुनर्स्थापित कर सकते हैं।",
     "messages_empty_header": "XMTP ब्रह्माण्ड की खोज करें",
     "messages_empty_subheader": "आरंभ करें",
     "messages_empty_cta_1_header": "मेसेज भेजें",

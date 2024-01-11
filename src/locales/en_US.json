@@ -29,6 +29,7 @@
     "convos_empty_button": "Send your first message",
     "convos_empty_recipient_placeholder": "New recipient",
     "convos_empty_text_placeholder": "New message",
+    "convos_empty_blocker_header": "Blocked users and denied requests will appear here. You can unblock or restore them at any time.",
     "messages_empty_header": "Explore the XMTP universe",
     "messages_empty_subheader": "Get started",
     "messages_empty_cta_1_header": "Send a message",

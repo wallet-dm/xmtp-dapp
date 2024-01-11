@@ -1,6 +1,9 @@
+import type { ConsentState } from "@xmtp/react-sdk";
 import type React from "react";
 import { Virtuoso } from "react-virtuoso";
+import { EmptyBlocked } from "../EmptyBlocked/EmptyBlocked";
 import { EmptyMessage } from "../EmptyMessage/EmptyMessage";
+import { EmptyRequest } from "../EmptyRequest/EmptyRequest";
 import { MessagePreviewCard } from "../MessagePreviewCard/MessagePreviewCard";
 
 interface ConversationListProps {
@@ -20,6 +23,10 @@ interface ConversationListProps {
    * Has a value been entered for the recipient?
    */
   hasRecipientEnteredValue?: boolean;
+  /**
+   * Active consentFilter
+   */
+  consentFilter: ConsentState;
 }
 
 export const ConversationList = ({
@@ -27,6 +34,7 @@ export const ConversationList = ({
   isLoading,
   setStartedFirstMessage,
   hasRecipientEnteredValue,
+  consentFilter,
 }: ConversationListProps) =>
   !messages?.length && isLoading ? (
     <div className="w-full overflow-hidden h-full flex flex-col justify-start sm:w-full bg-gray-100">
@@ -34,10 +42,17 @@ export const ConversationList = ({
         <MessagePreviewCard key={idx} isLoading />
       ))}
     </div>
-  ) : !messages.length && !isLoading && !hasRecipientEnteredValue ? (
+  ) : !messages.length &&
+    !isLoading &&
+    !hasRecipientEnteredValue &&
+    consentFilter === "allowed" ? (
     <div className="w-full overflow-hidden sm:w-full sm:p-4 md:p-8 border border-gray-100 h-full">
       <EmptyMessage setStartedFirstMessage={setStartedFirstMessage} />
     </div>
+  ) : !messages.length && !isLoading && consentFilter === "denied" ? (
+    <EmptyBlocked />
+  ) : !messages.length && !isLoading && consentFilter === "unknown" ? (
+    <EmptyRequest />
   ) : (
     <Virtuoso
       className="sm:w-full flex flex-col h-full bg-gray-100 border-x"
