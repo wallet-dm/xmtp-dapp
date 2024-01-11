@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import type { CachedMessageWithId } from "@xmtp/react-sdk";
+import type { CachedMessageWithId, ConsentState } from "@xmtp/react-sdk";
 import type { ETHAddress } from "../helpers";
 
 export type RecipientState = "invalid" | "loading" | "error" | "valid";
@@ -33,6 +33,8 @@ interface XmtpState {
   setStartedFirstMessage: (startedFirstMessage: boolean) => void;
   attachmentError: string;
   setAttachmentError: (attachmentError: string) => void;
+  consentFilter: ConsentState;
+  setConsentFilter: (filter: ConsentState) => void;
   activeMessage?: CachedMessageWithId;
   setActiveMessage: (message?: CachedMessageWithId) => void;
 }
@@ -85,6 +87,8 @@ export const useXmtpStore = create<XmtpState>((set) => ({
     set(() => ({ startedFirstMessage })),
   attachmentError: "",
   setAttachmentError: (attachmentError) => set(() => ({ attachmentError })),
+  consentFilter: "allowed",
+  setConsentFilter: (consentFilter) => set(() => ({ consentFilter })),
   activeMessage: undefined,
   setActiveMessage: (activeMessage) => set(() => ({ activeMessage })),
 }));
