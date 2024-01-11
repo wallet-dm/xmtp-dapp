@@ -44,6 +44,8 @@
     "address_field_not_on_network": "Sorry, we can't message this address because its owner hasn't used it with XMTP yet",
     "message_field_prompt": "Write a message",
     "conversation_start": "This is the beginning of the conversation",
+    "conversation_accept_prompt": "Accept the message request from {{address}}?",
+    "conversation_denied": "You have denied the message request from {{address}}.",
     "conversation_loading": "Loading messages...",
     "message_not_delivered": "Not delivered",
     "message_retry": "Retry",
@@ -84,7 +86,9 @@
     "share_code": "Share the power of the XMTP network with your friends, family and colleagues",
     "share_link": "Copy your share link",
     "share_qr_code": "Share QR Code",
-    "report_bug": "Report a bug"
+    "report_bug": "Report a bug",
+    "allow": "Allow",
+    "deny": "Deny"
   },
   "aria_labels": {
     "address_input": "Address input",
