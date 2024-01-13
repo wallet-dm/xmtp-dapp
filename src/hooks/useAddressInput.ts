@@ -119,7 +119,7 @@ export const useAddressInput = () => {
           setRecipientState("loading");
           const address = await throttledFetchEnsAddress({
             name: recipientInput,
-            chainId: 1
+            chainId: 1,
           });
           if (address) {
             setRecipientAddress(address);
