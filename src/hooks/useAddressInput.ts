@@ -52,6 +52,7 @@ export const useAddressInput = () => {
               // check for ENS name
               const ensName = await throttledFetchEnsName({
                 address: recipientAddress,
+                chainId: 1,
               });
               setRecipientName(ensName);
             }
@@ -116,9 +117,9 @@ export const useAddressInput = () => {
           }
         } else if (isEnsName(recipientInput)) {
           setRecipientState("loading");
-          // fetch ens address
           const address = await throttledFetchEnsAddress({
             name: recipientInput,
+            chainId: 1,
           });
           if (address) {
             setRecipientAddress(address);

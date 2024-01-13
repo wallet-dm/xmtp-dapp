@@ -92,7 +92,11 @@ export const fetchPeerAddressAvatar = async (
     // check for a cached name
     const name = getCachedPeerAddressName(conversation);
     if (name) {
-      avatar = (await throttledFetchEnsAvatar({ name })) ?? null;
+      avatar =
+        (await throttledFetchEnsAvatar({
+          name,
+          chainId: 1,
+        })) ?? null;
     }
   }
   return avatar;
@@ -196,7 +200,10 @@ export const updateConversationIdentities = async (
       // eslint-disable-next-line no-await-in-loop
       await Promise.all(
         chunk.map(async (address) => {
-          const name = await throttledFetchEnsName({ address });
+          const name = await throttledFetchEnsName({
+            address,
+            chainId: 1,
+          });
           if (name) {
             resolvedAddresses[address] = name;
             const addressConversations = conversationsWithoutNameMap[address];

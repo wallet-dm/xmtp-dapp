@@ -117,7 +117,7 @@ export const throttledFetchUnsName = memoizeThrottle(
 );
 
 const fetchAddressName = async (address: ETHAddress) => {
-  let name = await throttledFetchEnsName({ address });
+  let name = await throttledFetchEnsName({ address, chainId: 1 });
   if (!name) {
     name = await throttledFetchUnsName(address);
   }
