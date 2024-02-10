@@ -35,8 +35,6 @@ interface XmtpState {
   setStartedFirstMessage: (startedFirstMessage: boolean) => void;
   attachmentError: string;
   setAttachmentError: (attachmentError: string) => void;
-  consentFilter: ConsentState;
-  setConsentFilter: (filter: ConsentState) => void;
   activeMessage?: CachedMessageWithId;
   setActiveMessage: (message?: CachedMessageWithId) => void;
   activeTab: ActiveTab;
@@ -93,8 +91,6 @@ export const useXmtpStore = create<XmtpState>((set) => ({
     set(() => ({ startedFirstMessage })),
   attachmentError: "",
   setAttachmentError: (attachmentError) => set(() => ({ attachmentError })),
-  consentFilter: "allowed",
-  setConsentFilter: (consentFilter) => set(() => ({ consentFilter })),
   activeMessage: undefined,
   setActiveMessage: (activeMessage) => set(() => ({ activeMessage })),
   activeTab: "messages",
