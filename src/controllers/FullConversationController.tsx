@@ -112,58 +112,17 @@ export const FullConversationController: React.FC<
       id="scrollableDiv"
       // eslint-disable-next-line jsx-a11y/no-noninteractive-tabindex
       tabIndex={0}
-      className="w-full h-full flex flex-col overflow-auto relative">
+      className="w-full h-full flex flex-col overflow-auto relative pb-4">
       {effect === "SNOW" ? (
         <SnowEffect messageId={messageId} key={messageId} />
       ) : effect === "RAIN" ? (
         <RainEffect messageId={messageId} key={messageId} />
       ) : null}
-      <FullConversation isLoading={isLoading} messages={messagesWithDates} />
-      {/* TODO: Move this to a component */}
-      {consentState(conversation.peerAddress) === "unknown" ? (
-        <div className="text-gray-500 font-regular text-sm w-full text-center">
-          <div className="flex justify-center items-center py-2">
-            {t("messages.conversation_accept_prompt", {
-              address: conversation.peerAddress,
-            })}
-          </div>
-          <div className="flex justify-around">
-            <div>
-              <GhostButton
-                label={t("common.allow")}
-                onClick={() => {
-                  void allow([conversation.peerAddress]);
-                  setConversationTopic("");
-                }}
-              />
-              <GhostButton
-                variant="secondary"
-                icon={<XCircleIcon width={24} />}
-                label={t("common.deny")}
-                onClick={() => {
-                  void deny([conversation.peerAddress]);
-                  setConversationTopic("");
-                }}
-              />
-            </div>
-          </div>
-        </div>
-      ) : consentState(conversation.peerAddress) === "denied" ? (
-        <>
-          <div className="text-wrap break-words overflow-hidden flex justify-center items-center text-gray-500 font-regular text-sm w-full py-2 text-center">
-            {t("messages.conversation_denied", {
-              address: conversation.peerAddress,
-            })}
-          </div>
-          <GhostButton
-            label={t("common.allow")}
-            onClick={() => {
-              void allow([conversation.peerAddress]);
-              setConversationTopic("");
-            }}
-          />
-        </>
-      ) : null}
+      <FullConversation
+        isLoading={isLoading}
+        messages={messagesWithDates}
+        address={conversation.peerAddress}
+      />
     </div>
   );
 };
