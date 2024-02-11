@@ -169,7 +169,7 @@ const Inbox: React.FC<{ children?: React.ReactNode }> = () => {
                     </div>
                   ) : (
                     <>
-                      {!conversationTopic  && activeTab === "messages" && (
+                      {!conversationTopic && activeTab === "messages" && (
                         <div className="flex" data-testid="address-container">
                           <AddressInputController />
                         </div>

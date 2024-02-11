@@ -47,7 +47,7 @@ export const ConversationList = ({
         <EmptyMessage setStartedFirstMessage={setStartedFirstMessage} />
       ) : activeTab === "requests" ? (
         <EmptyRequest />
-      ) : null }
+      ) : null}
     </div>
   ) : (
     <Virtuoso
