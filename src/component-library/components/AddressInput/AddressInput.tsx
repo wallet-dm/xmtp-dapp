@@ -1,7 +1,9 @@
 import { ChevronLeftIcon, XCircleIcon } from "@heroicons/react/outline";
 import { useTranslation } from "react-i18next";
 import { Avatar } from "../Avatar/Avatar";
-import { classNames } from "../../../helpers";
+import { TAILWIND_MD_BREAKPOINT, classNames } from "../../../helpers";
+import { ActiveTab } from "../../../store/xmtp";
+import useWindowSize from "../../../hooks/useWindowSize";
 
 interface AddressInputProps {
   /**
@@ -50,6 +52,10 @@ interface AddressInputProps {
    * Is there a right icon click event that needs to be handled?
    */
   onRightIconClick?: () => void;
+  /**
+   * Currently Active Tab
+   */
+  activeTab: ActiveTab;
 }
 
 export const AddressInput = ({
@@ -61,9 +67,12 @@ export const AddressInput = ({
   value,
   onLeftIconClick,
   onRightIconClick,
+  activeTab,
 }: AddressInputProps) => {
   const { t } = useTranslation();
   const subtextColor = isError ? "text-red-600" : "text-gray-500";
+  const [width] = useWindowSize();
+  const isMobileView = width <= TAILWIND_MD_BREAKPOINT;
   return (
     <div
       className={classNames(
@@ -124,12 +133,22 @@ export const AddressInput = ({
           </div>
         </div>
       </form>
-      {onRightIconClick && (
-        <XCircleIcon
-          onClick={onRightIconClick}
-          height="24"
-          className="text-red-600 cursor-pointer"
-        />
+      {onRightIconClick && activeTab === "messages" && (
+        <button
+          type="button"
+          className="text-indigo-600 font-bold text-md"
+          onClick={onRightIconClick}>
+          {t("consent.block")}
+        </button>
+      )}
+      {/* Check for mobile view to avoid having multiple block elements visible on Desktop */}
+      {isMobileView && onRightIconClick && activeTab === "blocked" && (
+        <button
+          type="button"
+          className="text-indigo-600 font-bold text-md"
+          onClick={onRightIconClick}>
+          {t("consent.unblock")}
+        </button>
       )}
     </div>
   );

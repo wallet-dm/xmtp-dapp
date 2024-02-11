@@ -22,9 +22,10 @@ export const AddressInputController = () => {
   const setConversationTopic = useXmtpStore((s) => s.setConversationTopic);
   const changedConsentCount = useXmtpStore((s) => s.changedConsentCount);
   const setChangedConsentCount = useXmtpStore((s) => s.setChangedConsentCount);
+  const activeTab = useXmtpStore((s) => s.activeTab);
 
   const { getCachedByPeerAddress, getCachedByTopic } = useConversation();
-  const { deny } = useConsent();
+  const { deny, allow } = useConsent();
 
   // manage address input state
   useAddressInput();
@@ -105,9 +106,15 @@ export const AddressInputController = () => {
         setConversationTopic("");
       }}
       onRightIconClick={() => {
-        void deny([recipientAddress]);
-        setChangedConsentCount(changedConsentCount + 1);
+        if (activeTab === "messages") {
+          void deny([recipientAddress]);
+          setChangedConsentCount(changedConsentCount + 1);
+        } else if (activeTab === "blocked") {
+          void allow([recipientAddress]);
+          setChangedConsentCount(changedConsentCount + 1);
+        }
       }}
+      activeTab={activeTab}
     />
   );
 };
