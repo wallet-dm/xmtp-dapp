@@ -85,14 +85,14 @@ export const AddressInput = ({
         <ChevronLeftIcon onClick={onLeftIconClick} width={24} />
       </div>
       <form
-        className="flex w-full items-center"
+        className="flex w-full items-center truncate"
         onSubmit={(e) => e.preventDefault()}>
         <div className="mr-2 font-bold text-sm">{t("common.input_label")}:</div>
         {resolvedAddress?.displayAddress && <Avatar {...avatarUrlProps} />}
-        <div className="ml-2 md:ml-4">
+        <div className="ml-2 md:ml-4 truncate">
           {resolvedAddress?.displayAddress ? (
             <div
-              className="font-bold text-md"
+              className="font-bold text-md truncate"
               data-testid="recipient-wallet-address">
               {resolvedAddress.displayAddress}
             </div>
@@ -123,6 +123,7 @@ export const AddressInput = ({
               "max-md:text-xs",
               "h-5",
               subtextColor,
+              "truncate",
             )}
             data-testid="message-to-subtext">
             {subtext
