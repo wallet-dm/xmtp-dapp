@@ -2,7 +2,7 @@ import { ChevronLeftIcon } from "@heroicons/react/outline";
 import { useTranslation } from "react-i18next";
 import { TAILWIND_MD_BREAKPOINT, classNames } from "../../../helpers";
 import useWindowSize from "../../../hooks/useWindowSize";
-import type { ActiveTab } from "../../../store/xmtp";
+import { useXmtpStore, type ActiveTab } from "../../../store/xmtp";
 import { Avatar } from "../Avatar/Avatar";
 
 interface AddressInputProps {
@@ -73,13 +73,15 @@ export const AddressInput = ({
   const subtextColor = isError ? "text-red-600" : "text-gray-500";
   const [width] = useWindowSize();
   const isMobileView = width <= TAILWIND_MD_BREAKPOINT;
+  const conversationTopic = useXmtpStore((s) => s.conversationTopic);
   return (
     <div
+      data-testid="address-container"
       className={classNames(
         !resolvedAddress?.displayAddress
           ? "bg-indigo-50 border-b border-indigo-500"
           : "border-b border-gray-200",
-        "flex items-center px-2 md:px-4 py-3 border-l-0 z-10 max-md:h-fit md:max-h-sm w-full h-16",
+        "bg-white flex items-center px-2 md:px-4 py-3 border-l-0 z-10 max-md:h-fit md:max-h-sm w-full h-16",
       )}>
       <div className="max-md:w-fit md:hidden flex w-24 p-0 justify-start">
         <ChevronLeftIcon onClick={onLeftIconClick} width={24} />
@@ -134,7 +136,7 @@ export const AddressInput = ({
           </div>
         </div>
       </form>
-      {onRightIconClick && activeTab === "messages" && (
+      {onRightIconClick && activeTab === "messages" && conversationTopic && (
         <button
           type="button"
           className="text-indigo-600 font-bold text-md"
