@@ -17,7 +17,7 @@ export const Error = ({ errorText, onConnect }: ErrorProps) => {
   const { t } = useTranslation();
 
   return (
-    <div className="bg-white flex flex-col justify-center items-center max-w-sm text-center m-auto w-screen p-4 h-screen">
+    <div className="bg-white flex flex-col justify-center items-center max-w-sm text-center m-auto w-screen p-4 h-dvh">
       <ExclamationIcon className="text-red-600" width={82} />
       <div className="mt-2">
         <h1 className="text-4xl font-bold p-4 pt-0">

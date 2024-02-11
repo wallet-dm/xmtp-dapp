@@ -20,7 +20,7 @@ export const ErrorPage = ({
   const { t } = useTranslation();
 
   return (
-    <div className="bg-white h-screen max-w-sm flex flex-col justify-center items-center m-auto text-center">
+    <div className="bg-white h-dvh max-w-sm flex flex-col justify-center items-center m-auto text-center">
       {icon}
       <div className="text-4xl font-bold mb-4">
         {header || t("status_messaging.error_1_header")}

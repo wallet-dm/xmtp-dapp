@@ -147,7 +147,7 @@ const SideNav = ({
         "flex-col",
         "justify-between",
         "items-center",
-        "h-screen",
+        "h-dvh",
         "bg-white",
         isOpen ? "px-6" : "px-3",
         "border-r",

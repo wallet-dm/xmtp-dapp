@@ -51,8 +51,9 @@ export const HeaderDropdown = ({
             data-testid={testId}
             type="button"
             className={classNames(
-              "text-lg mr-2 cursor-pointer",
+              "mr-2 cursor-pointer truncate",
               activeTab === name ? "font-bold" : "",
+              isMobileView ? "text-md" : "text-lg",
             )}
             onClick={() => {
               setActiveTab(name as ActiveTab);

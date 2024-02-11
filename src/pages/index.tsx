@@ -48,7 +48,7 @@ const OnboardingPage = () => {
   }, [status]);
 
   return (
-    <div className={classNames("h-screen", "w-full", "overflow-auto")}>
+    <div className={classNames("h-dvh", "w-full", "overflow-auto")}>
       <OnboardingStep
         step={step}
         isLoading={isLoading}

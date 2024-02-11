@@ -132,7 +132,7 @@ const Inbox: React.FC<{ children?: React.ReactNode }> = () => {
           (!recipientAddress && !startedFirstMessage) ? (
             <>
               <SideNavController />
-              <div className="flex flex-col w-full h-screen overflow-y-auto md:w-[350px]">
+              <div className="flex flex-col w-full h-dvh overflow-y-auto md:w-[350px]">
                 <HeaderDropdownController />
                 <ConversationListController
                   setStartedFirstMessage={setStartedFirstMessage}
@@ -144,7 +144,7 @@ const Inbox: React.FC<{ children?: React.ReactNode }> = () => {
         {size[0] > TAILWIND_MD_BREAKPOINT ||
         recipientAddress ||
         startedFirstMessage ? (
-          <div className="flex w-full flex-col h-screen overflow-hidden">
+          <div className="flex w-full flex-col h-dvh overflow-hidden">
             {!conversations.length &&
             !loadingConversations &&
             !startedFirstMessage ? (
@@ -154,7 +154,7 @@ const Inbox: React.FC<{ children?: React.ReactNode }> = () => {
               />
             ) : (
               // Full container including replies
-              <div className="flex h-screen">
+              <div className="flex h-dvh">
                 <div className="h-full w-full flex flex-col justify-between">
                   {activeMessage && selectedConversation ? (
                     <div className="h-full overflow-auto">
