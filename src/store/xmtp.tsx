@@ -1,5 +1,5 @@
+import type { CachedMessageWithId } from "@xmtp/react-sdk";
 import { create } from "zustand";
-import type { CachedMessageWithId, ConsentState } from "@xmtp/react-sdk";
 import type { ETHAddress } from "../helpers";
 
 export type RecipientState = "invalid" | "loading" | "error" | "valid";

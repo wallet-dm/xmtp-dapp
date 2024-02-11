@@ -1,21 +1,17 @@
 /* eslint-disable @typescript-eslint/no-unsafe-argument */
 /* eslint-disable @typescript-eslint/no-unsafe-member-access */
-import { XCircleIcon } from "@heroicons/react/solid";
 import { ContentTypeReply } from "@xmtp/content-type-reply";
 import type { EffectType } from "@xmtp/experimental-content-type-screen-effect";
 import {
   ContentTypeId,
-  useConsent,
   useDb,
   useMessages,
   type CachedConversation,
 } from "@xmtp/react-sdk";
 import { isSameDay } from "date-fns";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useTranslation } from "react-i18next";
 import { DateDivider } from "../component-library/components/DateDivider/DateDivider";
 import { FullConversation } from "../component-library/components/FullConversation/FullConversation";
-import { GhostButton } from "../component-library/components/GhostButton/GhostButton";
 import RainEffect from "../component-library/components/ScreenEffects/RainEffect";
 import SnowEffect from "../component-library/components/ScreenEffects/SnowEffect";
 import { updateConversationIdentity } from "../helpers/conversation";
@@ -34,11 +30,8 @@ export const FullConversationController: React.FC<
   const renderedDatesRef = useRef<Date[]>([]);
   const [effect, setEffect] = useState<EffectType | undefined>(undefined);
   const { db } = useDb();
-  const { t } = useTranslation();
-  const { consentState, allow, deny } = useConsent();
   const [messageId, setMessageId] = useState<string>("");
   const conversationTopic = useXmtpStore((s) => s.conversationTopic);
-  const setConversationTopic = useXmtpStore((s) => s.setConversationTopic);
 
   useEffect(() => {
     void updateConversationIdentity(conversation, db);

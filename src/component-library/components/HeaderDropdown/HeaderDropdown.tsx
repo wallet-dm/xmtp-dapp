@@ -1,7 +1,8 @@
 import { PlusIcon } from "@heroicons/react/solid";
 import { useTranslation } from "react-i18next";
 import { classNames } from "../../../helpers";
-import { ActiveTab, useXmtpStore } from "../../../store/xmtp";
+import type { ActiveTab } from "../../../store/xmtp";
+import { useXmtpStore } from "../../../store/xmtp";
 import { IconButton } from "../IconButton/IconButton";
 
 // To-do: rename this throughout the app, as this is no longer a dropdown
@@ -19,12 +20,6 @@ interface HeaderDropdownProps {
    */
   isMobileView?: boolean;
 }
-
-const consentStateLabels = {
-  allowed: "messages.filter_allowed",
-  denied: "messages.filter_blocked",
-  unknown: "messages.filter_requests",
-};
 
 export const HeaderDropdown = ({
   onClick,
