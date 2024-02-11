@@ -62,9 +62,17 @@
     "share_code": "XMTP नेटवर्क की शक्ति को अपने मित्रों, परिवार और सहकर्मियों के साथ साझा करें",
     "share_link": "अपने शेयर लिंक को कॉपी करें",
     "share_qr_code": "क्यूआर कोड साझा करें",
-    "report_bug": "बग रिपोर्ट करो",
-    "allow": "स्वीकार करना",
-    "deny": "अस्वीकार करना"
+    "report_bug": "बग रिपोर्ट करो"
+  },
+  "consent": {
+    "accept": "लेना",
+    "block": "खंड",
+    "unblock": "खुलना",
+    "messages": "संदेशों",
+    "requests": "अनुरोध",
+    "blocked": "अवरोधित",
+    "new_message_request": "नया संदेश अनुरोध",
+    "new_message_request_description": "आपने पहले कभी इस वॉलेट पते से बातचीत नहीं की है। आप क्या करना चाहेंगे?"
   },
   "aria_labels": {
     "address_input": "पता इनपुट",
