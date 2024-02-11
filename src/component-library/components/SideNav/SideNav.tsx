@@ -229,8 +229,7 @@ const SideNav = ({
                   }
                 }}
                 className="w-[100%] flex justify-end cursor-pointer mb-20"
-                aria-label="Close QR Code Dialog"
-              >
+                aria-label="Close QR Code Dialog">
                 <XIcon width={24} />
               </div>
               <div className="text-center p-4 pb-6">
