@@ -2,7 +2,7 @@ import { ChevronLeftIcon } from "@heroicons/react/outline";
 import { useTranslation } from "react-i18next";
 import { TAILWIND_MD_BREAKPOINT, classNames } from "../../../helpers";
 import useWindowSize from "../../../hooks/useWindowSize";
-import type { ActiveTab } from "../../../store/xmtp";
+import { useXmtpStore, type ActiveTab } from "../../../store/xmtp";
 import { Avatar } from "../Avatar/Avatar";
 
 interface AddressInputProps {
@@ -73,6 +73,7 @@ export const AddressInput = ({
   const subtextColor = isError ? "text-red-600" : "text-gray-500";
   const [width] = useWindowSize();
   const isMobileView = width <= TAILWIND_MD_BREAKPOINT;
+  const conversationTopic = useXmtpStore((s) => s.conversationTopic);
   return (
     <div
       className={classNames(
@@ -134,7 +135,7 @@ export const AddressInput = ({
           </div>
         </div>
       </form>
-      {onRightIconClick && activeTab === "messages" && (
+      {onRightIconClick && activeTab === "messages" && conversationTopic && (
         <button
           type="button"
           className="text-indigo-600 font-bold text-md"
