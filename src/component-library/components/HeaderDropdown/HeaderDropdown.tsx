@@ -12,10 +12,6 @@ interface HeaderDropdownProps {
    */
   onClick?: () => void;
   /**
-   * What is the recipient input?
-   */
-  recipientInput: string;
-  /**
    * Boolean to determine if screen width is mobile size
    */
   isMobileView?: boolean;
@@ -23,7 +19,6 @@ interface HeaderDropdownProps {
 
 export const HeaderDropdown = ({
   onClick,
-  recipientInput,
   isMobileView,
 }: HeaderDropdownProps) => {
   const { t } = useTranslation();
@@ -63,14 +58,15 @@ export const HeaderDropdown = ({
             {t(`consent.${name}`)}
           </button>
         ))}
-        {(recipientInput || isMobileView) && (
-          <IconButton
-            onClick={() => onClick?.()}
-            label={<PlusIcon color="white" width="20" />}
-            testId="new-message-icon-cta"
-            srText={t("aria_labels.start_new_message") || ""}
-          />
-        )}
+        <IconButton
+          onClick={() => {
+            setActiveTab("messages");
+            onClick?.();
+          }}
+          label={<PlusIcon color="white" width="20" />}
+          testId="new-message-icon-cta"
+          srText={t("aria_labels.start_new_message") || ""}
+        />
       </div>
     </div>
   );
