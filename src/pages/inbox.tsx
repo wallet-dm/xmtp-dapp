@@ -28,6 +28,7 @@ const Inbox: React.FC<{ children?: React.ReactNode }> = () => {
   const navigate = useNavigate();
   const resetXmtpState = useXmtpStore((state) => state.resetXmtpState);
   const activeMessage = useXmtpStore((state) => state.activeMessage);
+  const conversationTopic = useXmtpStore((state) => state.conversationTopic);
 
   const { client, disconnect } = useClient();
   const [isDragActive, setIsDragActive] = useState(false);
@@ -168,9 +169,11 @@ const Inbox: React.FC<{ children?: React.ReactNode }> = () => {
                     </div>
                   ) : (
                     <>
-                      <div className="flex" data-testid="address-container">
-                        <AddressInputController />
-                      </div>
+                      {!conversationTopic  && activeTab === "messages" && (
+                        <div className="flex" data-testid="address-container">
+                          <AddressInputController />
+                        </div>
+                      )}
                       <div
                         className="h-full overflow-auto flex flex-col"
                         onFocus={() => {

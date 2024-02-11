@@ -4,6 +4,8 @@ import { Virtuoso } from "react-virtuoso";
 import { useMemo, useRef, useState } from "react";
 import { useConsent } from "@xmtp/react-sdk";
 import { useXmtpStore } from "../../../store/xmtp";
+import { AddressInput } from "../AddressInput/AddressInput";
+import { AddressInputController } from "../../../controllers/AddressInputController";
 
 interface FullConversationProps {
   messages?: Array<JSX.Element | null>;
@@ -81,6 +83,7 @@ export const FullConversation = ({
   const filteredMessages = useMemo(() => {
     const filtered = messages.filter((msg) => msg !== null);
     return [
+      <AddressInputController />,
       isLoading ? (
         <LoadingMessage key="loading" />
       ) : (
@@ -101,6 +104,7 @@ export const FullConversation = ({
       className="w-full h-full flex flex-col"
       itemContent={(index, message) => message}
       ref={virtuosoRef}
+      topItemCount={1}
     />
   );
 };
