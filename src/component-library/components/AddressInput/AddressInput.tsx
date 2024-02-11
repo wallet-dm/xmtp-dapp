@@ -76,6 +76,7 @@ export const AddressInput = ({
   const conversationTopic = useXmtpStore((s) => s.conversationTopic);
   return (
     <div
+      data-testid="address-container"
       className={classNames(
         !resolvedAddress?.displayAddress
           ? "bg-indigo-50 border-b border-indigo-500"
