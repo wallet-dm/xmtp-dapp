@@ -3,6 +3,7 @@ import { Virtuoso } from "react-virtuoso";
 import { EmptyMessage } from "../EmptyMessage/EmptyMessage";
 import { MessagePreviewCard } from "../MessagePreviewCard/MessagePreviewCard";
 import type { ActiveTab } from "../../../store/xmtp";
+import { EmptyRequest } from "../EmptyRequest/EmptyRequest";
 
 interface ConversationListProps {
   /**
@@ -44,7 +45,9 @@ export const ConversationList = ({
     <div className="w-full overflow-hidden sm:w-full sm:p-4 md:p-8 border border-gray-100 h-full">
       {activeTab === "messages" ? (
         <EmptyMessage setStartedFirstMessage={setStartedFirstMessage} />
-      ) : null}
+      ) : activeTab === "requests" ? (
+        <EmptyRequest />
+      ) : null }
     </div>
   ) : (
     <Virtuoso
