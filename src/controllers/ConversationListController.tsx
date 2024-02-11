@@ -1,5 +1,7 @@
-import { useEffect, useMemo, useState } from "react";
-import { useDb, useConsent } from "@xmtp/react-sdk";
+import { useEffect, useMemo } from "react";
+import { useClient, useConsent, useDb } from "@xmtp/react-sdk";
+import type { CachedConversation } from "@xmtp/react-sdk";
+import type { ActiveTab } from "../store/xmtp";
 import { useXmtpStore } from "../store/xmtp";
 import useListConversations from "../hooks/useListConversations";
 import { ConversationList } from "../component-library/components/ConversationList/ConversationList";
@@ -11,16 +13,28 @@ type ConversationListControllerProps = {
   setStartedFirstMessage: (startedFirstMessage: boolean) => void;
 };
 
+type ConsentProps = {
+  tab: ActiveTab;
+  convo: CachedConversation;
+};
+
+type NodeWithConsent = React.ReactElement<ConsentProps>;
+
 export const ConversationListController = ({
   setStartedFirstMessage,
 }: ConversationListControllerProps) => {
   const { isLoaded, isLoading, conversations } = useListConversations();
+  const { isAllowed, isDenied } = useConsent();
+
   const { db } = useDb();
-  const { consentState, loadConsentList } = useConsent();
-  const [consentStateLoaded, setConsentStateLoaded] = useState<boolean>(false);
+  // const [messages, setMessages] = useState<CachedMessage[]>([]);
+  // const messagesDb = db.table("messages");
+
   useStreamAllMessages();
+  const { client: walletAddress } = useClient();
   const recipientInput = useXmtpStore((s) => s.recipientInput);
-  const consentFilter = useXmtpStore((s) => s.consentFilter);
+  const changedConsentCount = useXmtpStore((s) => s.changedConsentCount);
+  const activeTab = useXmtpStore((s) => s.activeTab);
 
   // when the conversations are loaded, update their identities
   useEffect(() => {
@@ -31,43 +45,84 @@ export const ConversationListController = ({
     };
     void runUpdate();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isLoaded]);
+  }, [isLoaded, activeTab, changedConsentCount]);
 
-  useEffect(() => {
-    const loadConsent = async () => {
-      if (conversations.length && !consentStateLoaded) {
-        await loadConsentList();
-        setConsentStateLoaded(true);
-      }
-    };
-    void loadConsent();
+  // To-do: remove if not needed after consent goes out
+  // useEffect(() => {
+  //   // This may make more sense to come from the React SDK, but we're pulling from here for now
+  //   const fetchMessages = async () =>
+  //     messagesDb
+  //       .where("senderAddress")
+  //       .equals(walletAddress?.address as string)
+  //       .toArray()
+  //       .then((dbMessages: CachedMessage[]) => {
+  //         setMessages(dbMessages);
+  //       })
+  //       .catch((error: Error) => {
+  //         console.error("Error querying messages:", error);
+  //       });
+
+  //   void fetchMessages();
+  // }, [conversations.length, messagesDb, walletAddress?.address]);
+
+  const messagesToPass = useMemo(() => {
+    const conversationsWithTab = conversations.map(
+      (conversation: CachedConversation) => {
+        const tab = isAllowed(conversation.peerAddress)
+          ? "messages"
+          : isDenied(conversation.peerAddress)
+          ? "blocked"
+          : "requests";
+        return (
+          <MessagePreviewCardController
+            key={conversation.topic}
+            convo={conversation}
+            tab={tab}
+          />
+        );
+      },
+    );
+    const sortedConvos = conversationsWithTab.filter(
+      (item: NodeWithConsent) => {
+        // To-do: remove commented out code in this block if not needed after consent goes out
+        // const hasSentMessages = messages.find(
+        //   (message) => message?.conversationTopic === item.props.convo.topic,
+        // );
+        const isAddressBlocked = isDenied(item.props.convo.peerAddress);
+        const isAddressAllowed = isAllowed(item.props.convo.peerAddress);
+
+        if (activeTab === "messages") {
+          return isAddressAllowed;
+        }
+        if (activeTab === "blocked") {
+          return isAddressBlocked;
+        }
+        if (activeTab === "requests") {
+          return !isAddressBlocked && !isAddressAllowed;
+        }
+        return null;
+      },
+    );
+    return sortedConvos;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [conversations]);
-
-  const filteredConversations = useMemo(() => {
-    const convos = conversations
-      .filter(
-        (conversation) =>
-          consentState(conversation.peerAddress) === consentFilter,
-      )
-      .map((conversation) => (
-        <MessagePreviewCardController
-          key={conversation.topic}
-          convo={conversation}
-        />
-      ));
-
-    return convos;
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [conversations, consentFilter]);
+  }, [
+    conversations,
+    // messages,
+    isLoading,
+    walletAddress,
+    db,
+    changedConsentCount,
+    isAllowed,
+    isDenied,
+  ]);
 
   return (
     <ConversationList
       hasRecipientEnteredValue={!!recipientInput}
       setStartedFirstMessage={() => setStartedFirstMessage(true)}
       isLoading={isLoading}
-      messages={!isLoading ? filteredConversations : []}
-      consentFilter={consentFilter}
+      messages={messagesToPass}
+      activeTab={activeTab}
     />
   );
 };

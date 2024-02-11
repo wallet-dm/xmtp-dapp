@@ -1,37 +1,16 @@
-/* eslint-disable jsx-a11y/no-static-element-interactions */
-/* eslint-disable jsx-a11y/click-events-have-key-events */
-import { Dialog, Transition } from "@headlessui/react";
-import { ChevronDownIcon, CogIcon } from "@heroicons/react/outline";
-import { CheckCircleIcon, PlusIcon } from "@heroicons/react/solid";
-import type { ConsentState } from "@xmtp/react-sdk";
-import i18next from "i18next";
-import { Fragment, useEffect, useState } from "react";
+import { PlusIcon } from "@heroicons/react/solid";
 import { useTranslation } from "react-i18next";
 import { classNames } from "../../../helpers";
+import type { ActiveTab } from "../../../store/xmtp";
 import { useXmtpStore } from "../../../store/xmtp";
 import { IconButton } from "../IconButton/IconButton";
 
+// To-do: rename this throughout the app, as this is no longer a dropdown
 interface HeaderDropdownProps {
-  /**
-   * What options does the user have to change?
-   */
-  dropdownOptions: Array<ConsentState>;
-  /**
-   * What is currently selected?
-   */
-  defaultSelected?: ConsentState;
-  /**
-   * What happens on change?
-   */
-  onChange?: () => void;
   /**
    * On new message button click?
    */
   onClick?: () => void;
-  /**
-   * Is this dropdown disabled?
-   */
-  disabled?: boolean;
   /**
    * What is the recipient input?
    */
@@ -42,33 +21,23 @@ interface HeaderDropdownProps {
   isMobileView?: boolean;
 }
 
-const consentStateLabels = {
-  allowed: "messages.filter_allowed",
-  denied: "messages.filter_blocked",
-  unknown: "messages.filter_requests",
-};
-
 export const HeaderDropdown = ({
-  dropdownOptions,
-  defaultSelected,
-  onChange,
   onClick,
-  disabled,
   recipientInput,
   isMobileView,
 }: HeaderDropdownProps) => {
   const { t } = useTranslation();
 
-  const [isOpen, setIsOpen] = useState(false);
-  const setConsentFilter = useXmtpStore((s) => s.setConsentFilter);
-  const consentFilter = useXmtpStore((s) => s.consentFilter);
-  const [currentlySelected, setCurrentlySelected] =
-    useState<ConsentState>(consentFilter);
+  const activeTab = useXmtpStore((s) => s.activeTab);
+  const setActiveTab = useXmtpStore((s) => s.setActiveTab);
+  const resetRecipient = useXmtpStore((s) => s.resetRecipient);
+  const setConversationTopic = useXmtpStore((s) => s.setConversationTopic);
 
-  useEffect(() => {
-    setCurrentlySelected(consentFilter);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [i18next.language]);
+  const tabs = [
+    { name: "messages", testId: "messages-button" },
+    { name: "requests", testId: "requests-button" },
+    { name: "blocked", testId: "blocked-button" },
+  ];
 
   return (
     <div
@@ -76,12 +45,23 @@ export const HeaderDropdown = ({
       data-testid="conversation-list-header"
       className="border-l border-r border-b border-gray-200 bg-gray-100 h-16 p-4 pt-5">
       <div className="flex justify-between items-center">
-        <span className="flex" onClick={() => setIsOpen(!isOpen)}>
-          <h1 className="font-bold text-lg mr-2">
-            {defaultSelected ?? t(consentStateLabels[currentlySelected])}
-          </h1>
-          {!disabled && <ChevronDownIcon width="24" />}
-        </span>
+        {tabs.map(({ name, testId }) => (
+          <button
+            key={name}
+            data-testid={testId}
+            type="button"
+            className={classNames(
+              "text-lg mr-2 cursor-pointer",
+              activeTab === name ? "font-bold" : "",
+            )}
+            onClick={() => {
+              setActiveTab(name as ActiveTab);
+              resetRecipient();
+              setConversationTopic();
+            }}>
+            {t(`consent.${name}`)}
+          </button>
+        ))}
         {(recipientInput || isMobileView) && (
           <IconButton
             onClick={() => onClick?.()}
@@ -91,54 +71,6 @@ export const HeaderDropdown = ({
           />
         )}
       </div>
-
-      {!disabled && isOpen && (
-        <Transition.Root show={isOpen} as={Fragment}>
-          <Dialog
-            as="div"
-            className="overflow-y-auto fixed inset-0 z-10"
-            onClose={() => {}}>
-            <div className="bg-white w-fit rounded-lg absolute top-14 left-16">
-              <div
-                id="headerModalId"
-                className="p-4 border border-gray-100 rounded-lg max-w-fit">
-                {dropdownOptions.map((value) => (
-                  <div key={value} className="flex w-full justify-between">
-                    <div className="flex">
-                      <CogIcon width={24} className="text-gray-300 mr-4" />
-                      <button
-                        type="button"
-                        onClick={() => {
-                          onChange?.();
-                          setIsOpen(false);
-                          setCurrentlySelected(value);
-                          setConsentFilter(value);
-                        }}
-                        className={classNames(
-                          "cursor-pointer",
-                          "my-1",
-                          "outline-none",
-                          value === currentlySelected ? "font-bold my-1" : "",
-                        )}>
-                        {t(consentStateLabels[value])}
-                      </button>
-                    </div>
-                    <div className="flex items-center">
-                      {value === currentlySelected && (
-                        <CheckCircleIcon
-                          fill="limegreen"
-                          width="24"
-                          className="ml-4"
-                        />
-                      )}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </Dialog>
-        </Transition.Root>
-      )}
     </div>
   );
 };

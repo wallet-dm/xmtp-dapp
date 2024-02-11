@@ -1,6 +1,6 @@
 import { classNames } from "../../../helpers";
-import { ShortCopySkeletonLoader } from "../Loaders/SkeletonLoaders/ShortCopySkeletonLoader";
 import { IconSkeletonLoader } from "../Loaders/SkeletonLoaders/IconSkeletonLoader";
+import { ShortCopySkeletonLoader } from "../Loaders/SkeletonLoaders/ShortCopySkeletonLoader";
 import type { SettingsIcon } from "./iconMapping";
 import { iconMapping } from "./iconMapping";
 
@@ -83,6 +83,7 @@ export const SettingsCard = ({
       <IconSkeletonLoader />
     ) : (
       onToggle && (
+        /* eslint-disable-next-line jsx-a11y/label-has-associated-control */
         <label className="relative inline-flex items-center cursor-pointer">
           <input
             type="checkbox"

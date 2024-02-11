@@ -90,6 +90,16 @@
     "allow": "Allow",
     "deny": "Deny"
   },
+  "consent": {
+    "accept": "Accept",
+    "block": "Block",
+    "unblock": "Unblock",
+    "messages": "Messages",
+    "requests": "Requests",
+    "blocked": "Blocked",
+    "new_message_request": "New message request",
+    "new_message_request_description": "You have never interacted with this wallet address before. What would you like to do?"
+  },
   "aria_labels": {
     "address_input": "Address input",
     "filepicker": "File picker",

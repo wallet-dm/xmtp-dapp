@@ -16,7 +16,7 @@ import App from "./controllers/AppController";
 import "./polyfills";
 
 // Increment with any schema change; e.g. adding support for a new content type
-const DB_VERSION = 5;
+const DB_VERSION = 6;
 
 export const ScreenEffectCodecInstance = new ScreenEffectCodec();
 
