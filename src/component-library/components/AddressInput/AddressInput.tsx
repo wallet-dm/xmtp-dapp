@@ -1,9 +1,9 @@
-import { ChevronLeftIcon, XCircleIcon } from "@heroicons/react/outline";
+import { ChevronLeftIcon } from "@heroicons/react/outline";
 import { useTranslation } from "react-i18next";
-import { Avatar } from "../Avatar/Avatar";
 import { TAILWIND_MD_BREAKPOINT, classNames } from "../../../helpers";
-import { ActiveTab } from "../../../store/xmtp";
 import useWindowSize from "../../../hooks/useWindowSize";
+import type { ActiveTab } from "../../../store/xmtp";
+import { Avatar } from "../Avatar/Avatar";
 
 interface AddressInputProps {
   /**
