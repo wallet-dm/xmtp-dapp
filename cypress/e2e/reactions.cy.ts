@@ -36,7 +36,7 @@ describe(
       checkElement("reactions-container")
         .children()
         .first()
-        .should("have.text", "👍");
+        .should("have.text", "❤️");
     });
     it("can unreact to a message", () => {
       // React to message like above
@@ -58,7 +58,7 @@ describe(
       checkElement("reactions-container")
         .children()
         .first()
-        .should("have.text", "👍");
+        .should("have.text", "❤️");
 
       // React with a different emoji
       checkElement("message-tile-text").children().first().click();
@@ -68,7 +68,7 @@ describe(
       checkElement("reactions-container")
         .children()
         .last()
-        .should("have.text", "❤️");
+        .should("have.text", "❓");
     });
   },
 );
