@@ -68,7 +68,7 @@ describe(
       checkElement("reactions-container")
         .children()
         .first()
-        .should("have.text", "👍");
+        .should("have.text", "❤️");
     });
     it("cannot toggle replies view when there are no replies", () => {
       checkElement("replies-close-icon").click();
