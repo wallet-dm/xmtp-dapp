@@ -38,6 +38,7 @@ const AcceptOrDeny = ({ address }: { address: string }) => {
   const activeTab = useXmtpStore((s) => s.activeTab);
   const changedConsentCount = useXmtpStore((s) => s.changedConsentCount);
   const setChangedConsentCount = useXmtpStore((s) => s.setChangedConsentCount);
+  const setActiveTab = useXmtpStore((s) => s.setActiveTab);
 
   const [modalOpen, setModalOpen] = useState(true);
 
@@ -55,6 +56,7 @@ const AcceptOrDeny = ({ address }: { address: string }) => {
             void allow([address]);
             setModalOpen(false);
             setChangedConsentCount(changedConsentCount + 1);
+            setActiveTab("messages");
           }}>
           {t("consent.accept")}
         </button>
@@ -65,6 +67,7 @@ const AcceptOrDeny = ({ address }: { address: string }) => {
             void deny([address]);
             setModalOpen(false);
             setChangedConsentCount(changedConsentCount + 1);
+            setActiveTab("blocked");
           }}>
           {t("consent.block")}
         </button>
