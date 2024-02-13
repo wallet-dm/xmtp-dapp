@@ -23,6 +23,7 @@ export const AddressInputController = () => {
   const changedConsentCount = useXmtpStore((s) => s.changedConsentCount);
   const setChangedConsentCount = useXmtpStore((s) => s.setChangedConsentCount);
   const activeTab = useXmtpStore((s) => s.activeTab);
+  const setActiveTab = useXmtpStore((s) => s.setActiveTab);
 
   const { getCachedByPeerAddress, getCachedByTopic } = useConversation();
   const { deny, allow } = useConsent();
@@ -108,9 +109,11 @@ export const AddressInputController = () => {
       onRightIconClick={() => {
         if (activeTab === "messages") {
           void deny([recipientAddress]);
+          setActiveTab("blocked");
           setChangedConsentCount(changedConsentCount + 1);
         } else if (activeTab === "blocked") {
           void allow([recipientAddress]);
+          setActiveTab("messages");
           setChangedConsentCount(changedConsentCount + 1);
         }
       }}
