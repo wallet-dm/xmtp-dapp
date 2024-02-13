@@ -15,7 +15,7 @@ export type ReactionsBarProps = {
   setOnHover: (hover: boolean) => void;
 };
 
-const availableReactionEmojis = ["❤️", "👍", "👎","🤣", "❗", "❓"];
+const availableReactionEmojis = ["❤️", "👍", "👎", "🤣", "❗", "❓"];
 
 export const ReactionsBar: React.FC<ReactionsBarProps> = ({
   conversation,
