@@ -61,3 +61,5 @@ dist
 # Environment
 .env*
 
+# Cypress
+cypress/downloads/*
