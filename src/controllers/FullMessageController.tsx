@@ -1,16 +1,21 @@
 import type { CachedConversation, CachedMessageWithId } from "@xmtp/react-sdk";
-import { Client, useClient } from "@xmtp/react-sdk";
+import { useClient } from "@xmtp/react-sdk";
 import { FramesClient } from "@xmtp/frames-client";
 import { useEffect, useState } from "react";
-import type { PrivateKeyAccount, Transport, WalletClient } from "viem";
-import type { mainnet } from "wagmi";
-import { useWalletClient } from "wagmi";
+import type { GetMetadataResponse } from "@open-frames/proxy-client";
 import { FullMessage } from "../component-library/components/FullMessage/FullMessage";
 import { classNames, shortAddress } from "../helpers";
 import MessageContentController from "./MessageContentController";
 import { useXmtpStore } from "../store/xmtp";
 import { Frame } from "../component-library/components/Frame/Frame";
-import { getFrameInfo } from "../helpers/getFrameInfo";
+import { readMetadata } from "../helpers/openFrames";
+import type { FrameButton } from "../helpers/frameInfo";
+import {
+  getFrameTitle,
+  getOrderedButtons,
+  isValidFrame,
+  isXmtpFrame,
+} from "../helpers/frameInfo";
 
 interface FullMessageControllerProps {
   message: CachedMessageWithId;
@@ -18,60 +23,61 @@ interface FullMessageControllerProps {
   isReply?: boolean;
 }
 
-export type FrameInfo = {
-  image: string;
-  title: string;
-  buttons: string[];
-  postUrl: string;
-};
-
 export const FullMessageController = ({
   message,
   conversation,
   isReply,
 }: FullMessageControllerProps) => {
   const { client } = useClient();
-  const { data: walletClient } = useWalletClient();
 
   const conversationTopic = useXmtpStore((state) => state.conversationTopic);
 
-  const [frameInfo, setFrameInfo] = useState<FrameInfo | undefined>(undefined);
+  const [frameMetadata, setFrameMetadata] = useState<
+    GetMetadataResponse | undefined
+  >(undefined);
   const [frameButtonUpdating, setFrameButtonUpdating] = useState<number>(0);
+  const [textInputValue, setTextInputValue] = useState<string>("");
 
-  const handleFrameButtonClick = async (buttonIndex: number) => {
-    if (!frameInfo) {
+  const handleFrameButtonClick = async (
+    buttonIndex: number,
+    action: FrameButton["action"] = "post",
+  ) => {
+    if (!frameMetadata || !client || !frameMetadata?.frameInfo?.buttons) {
       return;
     }
-    const frameUrl = frameInfo.image;
+    const { frameInfo, url: frameUrl } = frameMetadata;
+    if (!frameInfo.buttons) {
+      return;
+    }
+    const button = frameInfo.buttons[`${buttonIndex}`];
 
     setFrameButtonUpdating(buttonIndex);
 
-    const xmtpClient = await Client.create(
-      walletClient as WalletClient<
-        Transport,
-        typeof mainnet,
-        PrivateKeyAccount
-      >,
-    );
-    const framesClient = new FramesClient(xmtpClient);
-
+    const framesClient = new FramesClient(client);
+    const postUrl = button.target || frameInfo.postUrl || frameUrl;
     const payload = await framesClient.signFrameAction({
       frameUrl,
+      inputText: textInputValue || undefined,
       buttonIndex,
       conversationTopic: conversationTopic as string,
-      participantAccountAddresses: [
-        client?.address as string,
-        conversation.peerAddress,
-      ],
+      participantAccountAddresses: [client.address, conversation.peerAddress],
     });
 
-    const updatedFrameMetadata = await FramesClient.postToFrame(
-      frameInfo.postUrl,
-      payload,
-    );
-    const updatedFrameInfo = getFrameInfo(updatedFrameMetadata.extractedTags);
-
-    setFrameInfo(updatedFrameInfo);
+    if (action === "post") {
+      const updatedFrameMetadata = await framesClient.proxy.post(
+        postUrl,
+        payload,
+      );
+      setFrameMetadata(updatedFrameMetadata);
+    } else if (action === "post_redirect") {
+      const { redirectedTo } = await framesClient.proxy.postRedirect(
+        postUrl,
+        payload,
+      );
+      window.open(redirectedTo, "_blank");
+    } else if (action === "link" && button?.target) {
+      window.open(button.target, "_blank");
+    }
     setFrameButtonUpdating(0);
   };
 
@@ -86,10 +92,9 @@ export const FullMessageController = ({
           const isUrl = !!word.match(urlRegex)?.[0];
 
           if (isUrl) {
-            const metadata = await FramesClient.readMetadata(word);
+            const metadata = await readMetadata(word);
             if (metadata) {
-              const info = getFrameInfo(metadata.extractedTags);
-              setFrameInfo(info);
+              setFrameMetadata(metadata);
             }
           }
         }),
@@ -102,6 +107,8 @@ export const FullMessageController = ({
     client?.address === message.senderAddress
       ? "items-end justify-end"
       : "items-start justify-start";
+
+  const showFrame = isValidFrame(frameMetadata);
 
   return (
     <div
@@ -124,13 +131,16 @@ export const FullMessageController = ({
           isSelf={client?.address === message.senderAddress}
         />
       </FullMessage>
-      {frameInfo?.image && (
+      {showFrame && (
         <Frame
-          image={frameInfo.image}
-          title={frameInfo.title}
-          buttons={frameInfo.buttons}
+          image={frameMetadata?.frameInfo?.image.content}
+          title={getFrameTitle(frameMetadata)}
+          buttons={getOrderedButtons(frameMetadata)}
           handleClick={handleFrameButtonClick}
           frameButtonUpdating={frameButtonUpdating}
+          interactionsEnabled={isXmtpFrame(frameMetadata)}
+          textInput={frameMetadata?.frameInfo?.textInput?.content}
+          onTextInputChange={setTextInputValue}
         />
       )}
     </div>

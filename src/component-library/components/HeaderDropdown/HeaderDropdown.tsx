@@ -28,7 +28,10 @@ export const HeaderDropdown = ({
   const resetRecipient = useXmtpStore((s) => s.resetRecipient);
   const setConversationTopic = useXmtpStore((s) => s.setConversationTopic);
 
-  const tabs = [
+  const tabs: {
+    name: ActiveTab;
+    testId: string;
+  }[] = [
     { name: "messages", testId: "messages-button" },
     { name: "requests", testId: "requests-button" },
     { name: "blocked", testId: "blocked-button" },
