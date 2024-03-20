@@ -110,10 +110,7 @@ export const FullMessage = ({
   return (
     <div
       data-testid="message-tile-container"
-      className={classNames(
-        "flex flex-col w-full px-4 md:px-8",
-        alignmentStyles,
-      )}>
+      className={classNames("flex flex-col w-full", alignmentStyles)}>
       <div
         className={classNames(
           "text-sm",
