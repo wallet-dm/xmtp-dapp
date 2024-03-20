@@ -1,12 +1,5 @@
-import { useSendMessage } from "@xmtp/react-sdk";
-import type { CachedMessageWithId, CachedConversation } from "@xmtp/react-sdk";
-import { useCallback } from "react";
-import {
-  ContentTypeReaction,
-  type Reaction,
-} from "@xmtp/content-type-reaction";
+import type { CachedConversation, CachedMessageWithId } from "@xmtp/react-sdk";
 import { useTranslation } from "react-i18next";
-import styles from "./ReactionsBar.module.css";
 import { useXmtpStore } from "../../../store/xmtp";
 
 export type ReactionsBarProps = {
@@ -15,62 +8,27 @@ export type ReactionsBarProps = {
   setOnHover: (hover: boolean) => void;
 };
 
-const availableReactionEmojis = ["❤️", "👍", "👎", "🤣", "❗", "❓"];
-
-export const ReactionsBar: React.FC<ReactionsBarProps> = ({
-  conversation,
-  message,
-  setOnHover,
-}) => {
-  const { sendMessage } = useSendMessage();
-
+export const ReactionsBar: React.FC<ReactionsBarProps> = ({ message }) => {
   // For replies
   const activeMessage = useXmtpStore((state) => state.activeMessage);
   const setActiveMessage = useXmtpStore((state) => state.setActiveMessage);
   const { t } = useTranslation();
 
-  const handleClick = useCallback(
-    (emoji: string) => {
-      void sendMessage<Reaction>(
-        conversation,
-        {
-          content: emoji,
-          schema: "unicode",
-          reference: message.xmtpID,
-          action: "added",
-        },
-        ContentTypeReaction,
-      );
-      setOnHover(false);
-    },
-    [conversation, sendMessage, setOnHover, message],
-  );
-
   return (
-    <div className="flex items-center gap-1">
-      <div className={styles.wrapper} data-testid="reactions-bar">
-        {availableReactionEmojis.map((emoji) => (
+    <div data-testid="reactions-bar">
+      <div className="flex items-center gap-1">
+        {!activeMessage ? (
           <button
-            type="button"
-            data-testid="reaction"
-            key={emoji}
-            className={styles.option}
-            onClick={() => handleClick(emoji)}>
-            <span className={styles.emoji}>{emoji}</span>
+            className="bg-gray-100 p-1 px-2 rounded-lg"
+            data-testid="reply-icon"
+            onClick={() => {
+              setActiveMessage(message);
+            }}
+            type="button">
+            {t("messages.reply")}
           </button>
-        ))}
+        ) : null}
       </div>
-      {!activeMessage ? (
-        <button
-          className="bg-gray-100 p-1 px-2 rounded-lg"
-          data-testid="reply-icon"
-          onClick={() => {
-            setActiveMessage(message);
-          }}
-          type="button">
-          {t("messages.reply")}
-        </button>
-      ) : null}
     </div>
   );
 };
