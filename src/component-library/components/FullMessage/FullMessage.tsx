@@ -1,23 +1,18 @@
-import { useCallback, useMemo, useState } from "react";
-import type { KeyboardEventHandler, PropsWithChildren } from "react";
-import { useTranslation } from "react-i18next";
-import {
-  useResendMessage,
-  useReactions,
-  useSendMessage,
-  useClient,
-  useReplies,
-} from "@xmtp/react-sdk";
 import type {
   CachedConversation,
-  CachedMessageWithId,
-  CachedReaction,
+  CachedMessageWithId
 } from "@xmtp/react-sdk";
-import { ContentTypeReaction } from "@xmtp/content-type-reaction";
-import { DateDivider } from "../DateDivider/DateDivider";
+import {
+  useReplies,
+  useResendMessage
+} from "@xmtp/react-sdk";
+import type { KeyboardEventHandler, PropsWithChildren } from "react";
+import { useCallback, useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { classNames } from "../../../helpers";
-import { ReactionsBar } from "../ReactionsBar/ReactionsBar";
 import { useXmtpStore } from "../../../store/xmtp";
+import { DateDivider } from "../DateDivider/DateDivider";
+import { ReplyBar } from "../ReplyBar/ReplyBar";
 
 interface MessageSender {
   displayAddress: string;
@@ -67,14 +62,10 @@ export const FullMessage = ({
 }: FullMessageProps) => {
   const { t } = useTranslation();
   const { resend, cancel } = useResendMessage();
-  const { sendMessage } = useSendMessage();
   const [onHover, setOnHover] = useState(false);
 
   const setActiveMessage = useXmtpStore((s) => s.setActiveMessage);
   const replies = useReplies(message);
-
-  const reactions = useReactions(message) || [];
-  const { client } = useClient();
 
   const handleResend = useCallback(() => {
     void resend(message);
@@ -112,21 +103,6 @@ export const FullMessage = ({
     return incomingMessageBackgroundStyles;
   }, [from.isSelf, message.hasLoadError]);
 
-  const deleteReaction = (reaction: CachedReaction) => {
-    if (reaction.senderAddress === client?.address) {
-      void sendMessage(
-        conversation,
-        {
-          content: reaction.content,
-          schema: "unicode",
-          reference: message.xmtpID,
-          action: "removed",
-        },
-        ContentTypeReaction,
-      );
-    }
-  };
-
   const alignmentStyles = from.isSelf
     ? "items-end justify-end"
     : "items-start justify-start";
@@ -156,7 +132,7 @@ export const FullMessage = ({
             className={classNames(onHover ? "opacity-1" : "opacity-0")}
             onMouseOver={() => setOnHover(true)}
             onFocus={() => setOnHover(true)}>
-            <ReactionsBar
+            <ReplyBar
               message={message}
               conversation={conversation}
               setOnHover={setOnHover}
@@ -214,32 +190,6 @@ export const FullMessage = ({
               {t("messages.view_replies")}
             </button>
           ) : null}
-          <div
-            className={classNames("flex gap-x-1", alignmentStyles)}
-            data-testid="reactions-container">
-            {reactions.map((reaction) => (
-              <div
-                role="button"
-                tabIndex={0}
-                key={reaction.xmtpID}
-                className={classNames(
-                  " rounded-full border px-1 w-7 h-7 flex items-center justify-center",
-                  reaction.senderAddress === client?.address
-                    ? "border-indigo-600 cursor-pointer"
-                    : "border-gray-200 cursor-auto",
-                )}
-                onKeyDown={(e) => {
-                  if (e.key === enterKey) {
-                    void deleteReaction(reaction);
-                  }
-                }}
-                onClick={() => {
-                  void deleteReaction(reaction);
-                }}>
-                {reaction.content}
-              </div>
-            ))}
-          </div>
         </div>
       </div>
       {showDateDivider && <DateDivider date={datetime} />}
