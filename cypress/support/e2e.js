@@ -12,4 +12,11 @@ Cypress.on("uncaught:exception", (err, runnable) => {
   ) {
     return false;
   }
+  if (
+    err.message.includes(
+      "ResizeObserver loop completed with undelivered notifications",
+    )
+  ) {
+    return false;
+  }
 });

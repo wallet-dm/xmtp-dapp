@@ -71,8 +71,8 @@ export const ConversationListController = ({
         const tab = isAllowed(conversation.peerAddress)
           ? "messages"
           : isDenied(conversation.peerAddress)
-          ? "blocked"
-          : "requests";
+            ? "blocked"
+            : "requests";
         return (
           <MessagePreviewCardController
             key={conversation.topic}
