@@ -159,12 +159,13 @@ const Inbox: React.FC<{ children?: React.ReactNode }> = () => {
                 <div className="h-full w-full flex flex-col justify-between">
                   {activeMessage && selectedConversation ? (
                     <div className="h-full overflow-auto">
-                      <XIcon
-                        data-testid="replies-close-icon"
-                        width={24}
-                        onClick={() => setActiveMessage()}
-                        className="absolute top-2 right-2 cursor-pointer"
-                      />
+                      <div className="flex justify-end p-4">
+                        <XIcon
+                          data-testid="replies-close-icon"
+                          width={24}
+                          onClick={() => setActiveMessage()}
+                        />
+                      </div>
                       <ReplyThread conversation={selectedConversation} />
                     </div>
                   ) : (
