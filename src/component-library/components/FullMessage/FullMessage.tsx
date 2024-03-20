@@ -143,7 +143,7 @@ export const FullMessage = ({
             tabIndex={0}
             onKeyDown={() => setOnHover(true)}
             className={classNames(
-              "whitespace-pre-wrap p-2 px-3 rounded-tl-xl rounded-tr-xl my-1 max-w-fit break-words text-md pl-3 mt-0",
+              "whitespace-pre-wrap p-2 px-3 rounded-tl-xl rounded-tr-xl my-1 w-full break-words text-md pl-3 mt-0",
               messageBackgroundStyles,
             )}
             onMouseOver={() => setOnHover(true)}
