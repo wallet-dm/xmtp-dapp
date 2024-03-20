@@ -26,7 +26,7 @@ describe(
       checkElement("conversation-list-header");
       sendAndEnterMessage(testUserWithXmtpAccount, shortMessage);
       checkElement("message-tile-text").children().first().click();
-      checkElement("reactions-bar");
+      checkElement("reply-bar");
       checkElement("reply-icon").click();
       checkElement("replies-container");
     });
