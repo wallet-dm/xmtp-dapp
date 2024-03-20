@@ -54,7 +54,7 @@ export const HeaderDropdown = ({
               isMobileView ? "text-md" : "text-lg",
             )}
             onClick={() => {
-              setActiveTab(name as ActiveTab);
+              setActiveTab(name);
               resetRecipient();
               setConversationTopic();
             }}>
