@@ -110,6 +110,10 @@ const Inbox: React.FC<{ children?: React.ReactNode }> = () => {
     return <div />;
   }
 
+  const visible =
+    size[0] > TAILWIND_MD_BREAKPOINT ||
+    (!recipientAddress && !startedFirstMessage);
+
   const handleDrag = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
     if (e.type === "dragenter" || e.type === "dragover") {
@@ -129,18 +133,17 @@ const Inbox: React.FC<{ children?: React.ReactNode }> = () => {
       onDrop={onAttachmentChange}>
       <div className="w-full md:h-full overflow-auto flex flex-col md:flex-row">
         <div className="flex">
-          {size[0] > TAILWIND_MD_BREAKPOINT ||
-          (!recipientAddress && !startedFirstMessage) ? (
-            <>
-              <SideNavController />
-              <div className="flex flex-col w-full h-dvh overflow-y-auto md:w-[350px]">
-                <HeaderDropdownController />
-                <ConversationListController
-                  setStartedFirstMessage={setStartedFirstMessage}
-                />
-              </div>
-            </>
-          ) : null}
+          <div style={visible ? { display: "flex" } : { display: "none" }}>
+            <SideNavController />
+          </div>
+          <div
+            className="flex flex-col w-full h-dvh overflow-y-auto md:w-[350px]"
+            style={visible ? { display: "flex" } : { display: "none" }}>
+            <HeaderDropdownController />
+            <ConversationListController
+              setStartedFirstMessage={setStartedFirstMessage}
+            />
+          </div>
         </div>
         {size[0] > TAILWIND_MD_BREAKPOINT ||
         recipientAddress ||
