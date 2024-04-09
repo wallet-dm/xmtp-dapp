@@ -59,7 +59,7 @@ const useSendMessage = (
         const cid = await client.uploadFile(upload);
         const cidToString = cid.toString();
 
-        const url = `https://${cidToString}.ipfs.w3s.link`;
+        const url = `https://w3s.link/ipfs/${cidToString}`;
         const remoteAttachment: RemoteAttachment = {
           url,
           contentDigest: encryptedEncoded.digest,
