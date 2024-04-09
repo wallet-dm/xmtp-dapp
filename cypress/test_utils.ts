@@ -3,6 +3,8 @@ import { ENVIRONMENT } from "../src/helpers";
 
 export const TIMEOUT = 40000;
 
+export const sizes = ["macbook-16", "iphone-x"] as Cypress.ViewportPreset[];
+
 export const checkElement = (testId: string) =>
   cy.get(`[data-testid=${testId}]`, { timeout: TIMEOUT }).should("exist");
 
