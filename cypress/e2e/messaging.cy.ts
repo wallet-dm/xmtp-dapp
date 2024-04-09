@@ -4,9 +4,8 @@ import {
   checkElement,
   checkMissingElement,
   TIMEOUT,
+  sizes,
 } from "../test_utils";
-
-const sizes = ["macbook-16", "iphone-x"] as any[];
 
 sizes.forEach((size) => {
   describe(

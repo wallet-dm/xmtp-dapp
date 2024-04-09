@@ -1,3 +1,4 @@
+/// <reference types="cypress" />
 import { checkElement, startDemoEnv } from "../test_utils";
 
 const testCases = [
@@ -40,7 +41,11 @@ const testCases = [
     ],
     expectedRightPanel: [],
   },
-] as any[];
+] as {
+  size: Cypress.ViewportPreset;
+  expectedLeftPanel: string[];
+  expectedRightPanel: string[];
+}[];
 
 testCases.forEach(({ size, expectedLeftPanel, expectedRightPanel }) => {
   describe(
