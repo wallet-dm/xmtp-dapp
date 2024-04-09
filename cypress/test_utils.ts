@@ -1,4 +1,3 @@
-/// <reference types="cypress" />
 /* eslint-disable cypress/no-unnecessary-waiting */
 import { ENVIRONMENT } from "../src/helpers";
 

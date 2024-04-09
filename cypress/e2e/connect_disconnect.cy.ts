@@ -1,4 +1,3 @@
-/// <reference types="cypress" />
 import { checkElement, startDemoEnv } from "../test_utils";
 
 const testCases = [
