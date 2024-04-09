@@ -1,10 +1,10 @@
+import { useConsent, useConversation } from "@xmtp/react-sdk";
 import { useEffect } from "react";
-import { useConversation, useConsent } from "@xmtp/react-sdk";
 import { AddressInput } from "../component-library/components/AddressInput/AddressInput";
 import { getRecipientInputSubtext, shortAddress } from "../helpers";
+import { useAddressInput } from "../hooks/useAddressInput";
 import useWindowSize from "../hooks/useWindowSize";
 import { useXmtpStore } from "../store/xmtp";
-import { useAddressInput } from "../hooks/useAddressInput";
 
 export const AddressInputController = () => {
   // XMTP State
@@ -108,11 +108,11 @@ export const AddressInputController = () => {
       }}
       onRightIconClick={() => {
         if (activeTab === "messages") {
-          void deny([recipientAddress]);
+          void deny([recipientAddress as string]);
           setActiveTab("blocked");
           setChangedConsentCount(changedConsentCount + 1);
         } else if (activeTab === "blocked") {
-          void allow([recipientAddress]);
+          void allow([recipientAddress as string]);
           setActiveTab("messages");
           setChangedConsentCount(changedConsentCount + 1);
         }
