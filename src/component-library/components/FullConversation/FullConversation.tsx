@@ -85,7 +85,6 @@ export const FullConversation = ({
   isLoading = false,
   address,
 }: FullConversationProps) => {
-  const changedConsentCount = useXmtpStore((s) => s.changedConsentCount);
   const virtuosoRef = useRef<VirtuosoHandle>(null);
   const filteredMessages = useMemo(() => {
     const filtered = messages.filter((msg) => msg !== null);
@@ -99,7 +98,7 @@ export const FullConversation = ({
       ...filtered,
       <AcceptOrDeny key={address} address={address} />,
     ];
-  }, [isLoading, messages, address, changedConsentCount]);
+  }, [isLoading, messages, address]);
 
   return (
     <Virtuoso
