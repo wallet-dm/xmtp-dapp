@@ -39,6 +39,8 @@ const AcceptOrDeny = ({ address }: { address: string }) => {
   const changedConsentCount = useXmtpStore((s) => s.changedConsentCount);
   const setChangedConsentCount = useXmtpStore((s) => s.setChangedConsentCount);
   const setActiveTab = useXmtpStore((s) => s.setActiveTab);
+  const setConversationTopic = useXmtpStore((s) => s.setConversationTopic);
+  const resetRecipient = useXmtpStore((s) => s.resetRecipient);
 
   const [modalOpen, setModalOpen] = useState(true);
 
@@ -66,8 +68,10 @@ const AcceptOrDeny = ({ address }: { address: string }) => {
           onClick={() => {
             void deny([address]);
             setModalOpen(false);
+            setActiveTab("requests");
+            resetRecipient();
+            setConversationTopic("");
             setChangedConsentCount(changedConsentCount + 1);
-            setActiveTab("blocked");
           }}>
           {t("consent.block")}
         </button>
@@ -81,6 +85,7 @@ export const FullConversation = ({
   isLoading = false,
   address,
 }: FullConversationProps) => {
+  const changedConsentCount = useXmtpStore((s) => s.changedConsentCount);
   const virtuosoRef = useRef<VirtuosoHandle>(null);
   const filteredMessages = useMemo(() => {
     const filtered = messages.filter((msg) => msg !== null);
@@ -94,7 +99,7 @@ export const FullConversation = ({
       ...filtered,
       <AcceptOrDeny key={address} address={address} />,
     ];
-  }, [isLoading, messages, address]);
+  }, [isLoading, messages, address, changedConsentCount]);
 
   return (
     <Virtuoso
