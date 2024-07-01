@@ -327,7 +327,7 @@ const SideNav = ({
 
             <span className="text-sm ml-2 text-red-600 hover:text-red-800">
               <a
-                href="https://github.com/xmtp-labs/xmtp-inbox-web/issues/new?assignees=&labels=bug&template=bug_report.yml&title=Bug%3A+"
+                href="https://github.com/wallet-dm/xmtp-dapp/issues/new?assignees=&labels=bug&projects=&template=bug_report.yml&title=Bug%3A+"
                 target="_blank"
                 rel="noreferrer">
                 {t("common.report_bug")}
