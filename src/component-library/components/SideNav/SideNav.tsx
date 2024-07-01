@@ -78,7 +78,9 @@ const SideNav = ({
   const [isQrCodeDialogOpen, setIsQrCodeDialogOpen] = useState(false);
 
   const onSideNavBtnClick = (key: string) => {
-    if (key === t("menu.collapse_header")) setIsOpen(!isOpen);
+    if (key === t("menu.collapse_header")) {
+      setIsOpen((prev) => !prev);
+    }
   };
 
   const onXmtpIconClick = () => {
@@ -324,7 +326,25 @@ const SideNav = ({
                 <hr className="m-2" />
               </>
             )}
-
+            <div className="flex-col">
+              <div className="flex-1 text-sm m-2 text-black-600 hover:text-black-800">
+                <a
+                  href="https://discord.com/channels/1183606352204021760/1183606352204021763"
+                  target="_blank"
+                  rel="noreferrer">
+                  {t("common.discord")}
+                </a>
+              </div>
+              <div className="flex-1 text-sm m-2 text-black-600 hover:text-black-800">
+                <a
+                  href="https://x.com/walletdm_app"
+                  target="_blank"
+                  rel="noreferrer">
+                  {t("common.twitter")}
+                </a>
+              </div>
+            </div>
+            <hr className="m-2" />
             <span className="text-sm ml-2 text-red-600 hover:text-red-800">
               <a
                 href="https://github.com/xmtp-labs/xmtp-inbox-web/issues/new?assignees=&labels=bug&template=bug_report.yml&title=Bug%3A+"
@@ -333,6 +353,7 @@ const SideNav = ({
                 {t("common.report_bug")}
               </a>
             </span>
+
             <hr className="m-2" />
             <GhostButton
               onClick={onDisconnect}

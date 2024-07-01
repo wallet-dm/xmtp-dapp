@@ -86,7 +86,9 @@
     "share_code": "Share the power of the XMTP network with your friends, family and colleagues",
     "share_link": "Copy your share link",
     "share_qr_code": "Share QR Code",
-    "report_bug": "Report a bug"
+    "report_bug": "Report a bug",
+    "discord": "Discord",
+    "twitter": "Twitter"
   },
   "consent": {
     "accept": "Accept",
