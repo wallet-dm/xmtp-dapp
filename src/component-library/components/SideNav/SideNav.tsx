@@ -329,7 +329,7 @@ const SideNav = ({
             <div className="flex-col">
               <div className="flex-1 text-sm m-2 text-black-600 hover:text-black-800">
                 <a
-                  href="https://discord.com/channels/1183606352204021760/1183606352204021763"
+                  href="https://discord.gg/wMQd5NfY"
                   target="_blank"
                   rel="noreferrer">
                   {t("common.discord")}
