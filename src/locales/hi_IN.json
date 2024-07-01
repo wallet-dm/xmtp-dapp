@@ -62,7 +62,9 @@
     "share_code": "XMTP नेटवर्क की शक्ति को अपने मित्रों, परिवार और सहकर्मियों के साथ साझा करें",
     "share_link": "अपने शेयर लिंक को कॉपी करें",
     "share_qr_code": "क्यूआर कोड साझा करें",
-    "report_bug": "बग रिपोर्ट करो"
+    "report_bug": "बग रिपोर्ट करो",
+    "discord": "Discord",
+    "twitter": "Twitter"
   },
   "consent": {
     "accept": "लेना",
