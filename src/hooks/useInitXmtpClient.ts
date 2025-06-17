@@ -1,6 +1,6 @@
 import type { ClientOptions } from "@xmtp/react-sdk";
 import { Client, useClient, useCanMessage } from "@xmtp/react-sdk";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, useCallback } from "react";
 import { useConnect, useWalletClient } from "wagmi";
 import type { WalletClient } from "viem";
 import type { ETHAddress } from "../helpers";
@@ -15,6 +15,7 @@ import {
 } from "../helpers";
 import { mockConnector } from "../helpers/mockConnector";
 import { useXmtpStore } from "../store/xmtp";
+import { useDivviReferral } from "./useDivviReferral";
 import "wagmi/window";
 
 type ClientStatus = "new" | "created" | "enabled";
@@ -70,6 +71,15 @@ const useInitXmtpClient = () => {
   const { connect: connectWallet } = useConnect();
   const setClientName = useXmtpStore((s) => s.setClientName);
   const setClientAvatar = useXmtpStore((s) => s.setClientAvatar);
+
+  const { getReferralDataSuffix } = useDivviReferral({
+    consumer: "0x4Fe3a15a89cbaA505305B2e3C2C7dD81Bf1DD4C9", // Replace with your Divvi Identifier
+    providers: [
+      "0x0423189886d7966f0dd7e7d256898daeee625dca",
+      "0xc95876688026be9d6fa7a7c33328bd013effa2bb",
+      "0x7beb0e14f8d2e6f6678cc30d867787b384b19e20",
+    ],
+  });
 
   /**
    * In order to have more granular control of the onboarding process, we must
@@ -134,6 +144,31 @@ const useInitXmtpClient = () => {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Create a wrapper that modifies the transaction data
+  const getModifiedWalletClient = useCallback(async () => {
+    if (!walletClient) return null;
+
+    const dataSuffix = await getReferralDataSuffix();
+
+    // Create a modified version of the wallet client
+    const modifiedClient = {
+      ...walletClient,
+      sendTransaction: async (args: any) => {
+        // Append referral data to the transaction data
+        const modifiedArgs = {
+          ...args,
+          data: args.data + dataSuffix,
+        };
+        return walletClient.sendTransaction(modifiedArgs);
+      },
+    };
+
+    // Note: We need to use type assertions here because of version mismatches between
+    // the viem types used by XMTP and our project. This is a temporary solution until
+    // we can align the versions.
+    return modifiedClient as any;
+  }, [walletClient, getReferralDataSuffix]);
 
   // the code in this effect should only run once
   useEffect(() => {
@@ -218,29 +253,51 @@ const useInitXmtpClient = () => {
               await updateStatus();
             }
           } else {
-            // get client keys
-            keys = await Client.getKeys(walletClient, {
-              ...clientOptions,
-              // we don't need to publish the contact here since it
-              // will happen when we create the client later
-              skipContactPublishing: true,
-              // we can skip persistence on the keystore for this short-lived
-              // instance
-              persistConversations: false,
-              preCreateIdentityCallback,
-              preEnableIdentityCallback,
-            });
-            // all signatures have been accepted
-            setStatus("enabled");
-            setSigning(false);
-            // persist client keys
-            storeKeys(address, keys);
+            try {
+              // Get modified wallet client with referral data
+              const modifiedClient = await getModifiedWalletClient();
+
+              if (!modifiedClient) {
+                throw new Error("Failed to create modified wallet client");
+              }
+
+              // get client keys with referral data
+              // Note: Using type assertion here due to viem version mismatch
+              keys = await Client.getKeys(modifiedClient as any, {
+                ...clientOptions,
+                skipContactPublishing: true,
+                persistConversations: false,
+                preCreateIdentityCallback,
+                preEnableIdentityCallback,
+              });
+
+              setStatus("enabled");
+              setSigning(false);
+              storeKeys(address, keys);
+            } catch (error) {
+              console.error(
+                "Error initializing XMTP client with referral:",
+                error,
+              );
+              // Fallback to regular initialization if referral fails
+              keys = await Client.getKeys(walletClient as any, {
+                ...clientOptions,
+                skipContactPublishing: true,
+                persistConversations: false,
+                preCreateIdentityCallback,
+                preEnableIdentityCallback,
+              });
+              setStatus("enabled");
+              setSigning(false);
+              storeKeys(address, keys);
+            }
           }
         }
         // initialize client
         const xmtpClient = await initialize({
           keys,
           options: clientOptions,
+          // @ts-expect-error types
           signer: walletClient,
         });
         if (xmtpClient) {
@@ -261,7 +318,7 @@ const useInitXmtpClient = () => {
     };
     void updateStatus();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [client, walletClient]);
+  }, [client, walletClient, getModifiedWalletClient]);
 
   // it's important that this effect runs last
   useEffect(() => {
