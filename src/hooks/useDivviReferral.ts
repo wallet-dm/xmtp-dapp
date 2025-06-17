@@ -1,6 +1,5 @@
 import { getDataSuffix, submitReferral } from "@divvi/referral-sdk";
 import { useWalletClient } from "wagmi";
-import { mainnet } from "viem/chains";
 import { useCallback } from "react";
 
 interface UseDivviReferralProps {
