@@ -1,12 +1,21 @@
 {
   "root": true,
-  "extends": ["xmtp-web"],
+  "extends": [
+    "eslint:recommended",
+    "plugin:react/recommended",
+    "plugin:@typescript-eslint/recommended"
+  ],
+  "plugins": ["react-hooks", "jsx-a11y"],
   "parserOptions": {
     "project": "./tsconfig.json"
   },
   "rules": {
+    "react-hooks/exhaustive-deps": "warn",
     "no-plusplus": "off",
     "jsx-a11y/media-has-caption": "off",
+    "jsx-a11y/no-autofocus": "off",
+    "react/prop-types": "off",
+    "react/react-in-jsx-scope": "off",
     "@typescript-eslint/no-explicit-any": "warn",
     "@typescript-eslint/no-misused-promises": [
       "error",
