@@ -40,6 +40,7 @@
     "@wagmi/core": "^1.4.13",
     "@web3-storage/w3up-client": "^12.5.0",
     "@web3modal/wagmi": "^3.5.7",
+    "@xmtp/browser-sdk": "^6.5.0",
     "@xmtp/content-type-remote-attachment": "^1.1.8",
     "@xmtp/content-type-reply": "^1.1.9",
     "@xmtp/experimental-content-type-screen-effect": "^1.0.2",

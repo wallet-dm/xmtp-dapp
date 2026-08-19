@@ -5,6 +5,6 @@ import react from "@vitejs/plugin-react";
 export default defineConfig({
   plugins: [react()],
   optimizeDeps: {
-    exclude: ["@xmtp/user-preferences-bindings-wasm"],
+    exclude: ["@xmtp/user-preferences-bindings-wasm", "@xmtp/wasm-bindings"],
   },
 });
