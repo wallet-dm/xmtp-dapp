@@ -7,22 +7,27 @@ wallet-dm — a browser dapp for end-to-end-encrypted wallet-to-wallet messaging
 ## Pipeline Sequence
 
 1. **Planner**
+
    - Reads: feature request + PROJECT_MANIFEST.md
    - Writes: work-packages/wallet-dm.md
 
 2. **Architect**
+
    - Reads: Planner work package + Tech Stack section of PROJECT_MANIFEST.md
    - Writes: docs/adr/NNNN-wallet-dm.md
 
 3. **Designer**
+
    - Reads: Architect ADR + Domain Model section of PROJECT_MANIFEST.md
    - Writes: design/wallet-dm-spec.md
 
 4. **Coder**
+
    - Reads: Designer spec + Conventions section of PROJECT_MANIFEST.md
    - Writes: src/ on feature branch wallet-dm-[feature]
 
 5. **Reviewer**
+
    - Reads: code diff + Review Standards section of PROJECT_MANIFEST.md
    - Writes: review-reports/wallet-dm-review.md
 
