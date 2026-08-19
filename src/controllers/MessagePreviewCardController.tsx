@@ -47,14 +47,14 @@ export const MessagePreviewCardController = ({
   const setRecipientAvatar = useXmtpStore((s) => s.setRecipientAvatar);
   const setRecipientState = useXmtpStore((s) => s.setRecipientState);
   const setRecipientOnNetwork = useXmtpStore((s) => s.setRecipientOnNetwork);
-  const setConversationTopic = useXmtpStore((s) => s.setConversationTopic);
+  const setConversationId = useXmtpStore((s) => s.setConversationId);
   const setActiveMessage = useXmtpStore((s) => s.setActiveMessage);
   const setActiveTab = useXmtpStore((s) => s.setActiveTab);
 
-  const conversationTopic = useXmtpStore((state) => state.conversationTopic);
+  const conversationId = useXmtpStore((state) => state.conversationId);
 
   // Helpers
-  const isSelected = conversationTopic === convo.topic;
+  const isSelected = conversationId === convo.topic;
 
   const onConvoClick = useCallback(
     (conversation: CachedConversation) => {
@@ -69,15 +69,15 @@ export const MessagePreviewCardController = ({
         setRecipientState("valid");
         setRecipientInput(peerAddress);
       }
-      if (conversationTopic !== conversation.topic) {
-        setConversationTopic(conversation.topic);
+      if (conversationId !== conversation.topic) {
+        setConversationId(conversation.topic);
         setActiveMessage();
       }
     },
     [
-      conversationTopic,
+      conversationId,
       recipientAddress,
-      setConversationTopic,
+      setConversationId,
       setRecipientAddress,
       setRecipientAvatar,
       setRecipientInput,

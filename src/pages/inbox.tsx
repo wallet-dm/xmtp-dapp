@@ -28,7 +28,7 @@ const Inbox: React.FC<{ children?: React.ReactNode }> = () => {
   const navigate = useNavigate();
   const resetXmtpState = useXmtpStore((state) => state.resetXmtpState);
   const activeMessage = useXmtpStore((state) => state.activeMessage);
-  const conversationTopic = useXmtpStore((state) => state.conversationTopic);
+  const conversationId = useXmtpStore((state) => state.conversationId);
 
   const { client, disconnect } = useClient();
   const [isDragActive, setIsDragActive] = useState(false);
@@ -174,7 +174,7 @@ const Inbox: React.FC<{ children?: React.ReactNode }> = () => {
                     </div>
                   ) : (
                     <>
-                      {!conversationTopic && activeTab === "messages" && (
+                      {!conversationId && activeTab === "messages" && (
                         <div className="flex">
                           <AddressInputController />
                         </div>

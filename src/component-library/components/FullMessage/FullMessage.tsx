@@ -1,5 +1,6 @@
 import type { CachedConversation, CachedMessageWithId } from "@xmtp/react-sdk";
 import { useReplies, useResendMessage } from "@xmtp/react-sdk";
+import type { DecodedMessage } from "@xmtp/browser-sdk";
 import type { KeyboardEventHandler, PropsWithChildren } from "react";
 import { useCallback, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -175,7 +176,12 @@ export const FullMessage = ({
           {replies.length && !isReply ? (
             <button
               type="button"
-              onClick={() => setActiveMessage(message)}
+              // the store types activeMessage as a browser-sdk
+              // DecodedMessage; this component still passes a react-sdk
+              // cached message until the reply path migrates
+              onClick={() =>
+                setActiveMessage(message as unknown as DecodedMessage)
+              }
               className="text-gray-500"
               data-testid="view-replies-cta">
               {t("messages.view_replies")}

@@ -1,4 +1,8 @@
-import { type CachedConversation, useReplies } from "@xmtp/react-sdk";
+import {
+  type CachedConversation,
+  type CachedMessageWithId,
+  useReplies,
+} from "@xmtp/react-sdk";
 import { FullMessageController } from "../../../controllers/FullMessageController";
 import { useXmtpStore } from "../../../store/xmtp";
 
@@ -7,7 +11,12 @@ export type ReplyThreadProps = {
 };
 
 export const ReplyThread: React.FC<ReplyThreadProps> = ({ conversation }) => {
-  const activeMessage = useXmtpStore((state) => state.activeMessage);
+  // the store types activeMessage as a browser-sdk DecodedMessage, but until
+  // the reply path migrates, the runtime value is still a react-sdk cached
+  // message set by the unmigrated message components
+  const activeMessage = useXmtpStore(
+    (state) => state.activeMessage,
+  ) as unknown as CachedMessageWithId | undefined;
   const replies = useReplies(activeMessage);
 
   return (

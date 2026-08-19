@@ -30,7 +30,7 @@ export const FullMessageController = ({
 }: FullMessageControllerProps) => {
   const { client } = useClient();
 
-  const conversationTopic = useXmtpStore((state) => state.conversationTopic);
+  const conversationId = useXmtpStore((state) => state.conversationId);
 
   const [frameMetadata, setFrameMetadata] = useState<
     GetMetadataResponse | undefined
@@ -59,7 +59,7 @@ export const FullMessageController = ({
       frameUrl,
       inputText: textInputValue || undefined,
       buttonIndex,
-      conversationTopic: conversationTopic as string,
+      conversationTopic: conversationId as string,
       participantAccountAddresses: [client.address, conversation.peerAddress],
     });
 

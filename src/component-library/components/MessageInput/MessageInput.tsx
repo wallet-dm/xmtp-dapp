@@ -111,10 +111,8 @@ export const MessageInput = ({
     Dispatch<SetStateAction<string | string[] | undefined>>,
   ] = useState();
   const attachmentError = useXmtpStore((state) => state.attachmentError);
-  const setConversationTopic = useXmtpStore(
-    (state) => state.setConversationTopic,
-  );
-  const conversationTopic = useXmtpStore((state) => state.conversationTopic);
+  const setConversationId = useXmtpStore((state) => state.setConversationId);
+  const conversationId = useXmtpStore((state) => state.conversationId);
 
   const inputFile = useRef<HTMLInputElement | null>(null);
 
@@ -142,7 +140,7 @@ export const MessageInput = ({
   }, [value]);
 
   useEffect(() => {
-    if (conversationTopic) {
+    if (conversationId) {
       textAreaRef.current?.focus();
     }
     setValue("");
@@ -218,8 +216,8 @@ export const MessageInput = ({
           convo = cachedConversation;
         }
         // select existing or new conversation
-        if (convo && conversationTopic !== convo.topic) {
-          setConversationTopic(convo.topic);
+        if (convo && conversationId !== convo.topic) {
+          setConversationId(convo.topic);
         }
       }
       if (attach && convo) {
@@ -234,13 +232,13 @@ export const MessageInput = ({
   }, [
     attachment,
     conversation,
-    conversationTopic,
+    conversationId,
     getCachedByPeerAddress,
     peerAddress,
     sendMessage,
     setAttachment,
     setAttachmentPreview,
-    setConversationTopic,
+    setConversationId,
     startConversation,
     value,
   ]);

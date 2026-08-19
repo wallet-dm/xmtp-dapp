@@ -8,19 +8,19 @@ const useSelectedConversation = () => {
     CachedConversationWithId | undefined
   >();
   const { getCachedByTopic } = useConversation();
-  const conversationTopic = useXmtpStore((state) => state.conversationTopic);
+  const conversationId = useXmtpStore((state) => state.conversationId);
 
   useEffect(() => {
     const getSelectedConversation = async () => {
-      if (conversationTopic) {
-        const conversation = await getCachedByTopic(conversationTopic);
+      if (conversationId) {
+        const conversation = await getCachedByTopic(conversationId);
         setSelectedConversation(conversation);
       } else {
         setSelectedConversation(undefined);
       }
     };
     void getSelectedConversation();
-  }, [conversationTopic, getCachedByTopic]);
+  }, [conversationId, getCachedByTopic]);
 
   return selectedConversation;
 };

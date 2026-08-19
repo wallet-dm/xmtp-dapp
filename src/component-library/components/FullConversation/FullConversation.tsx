@@ -39,7 +39,7 @@ const AcceptOrDeny = ({ address }: { address: string }) => {
   const changedConsentCount = useXmtpStore((s) => s.changedConsentCount);
   const setChangedConsentCount = useXmtpStore((s) => s.setChangedConsentCount);
   const setActiveTab = useXmtpStore((s) => s.setActiveTab);
-  const setConversationTopic = useXmtpStore((s) => s.setConversationTopic);
+  const setConversationId = useXmtpStore((s) => s.setConversationId);
   const resetRecipient = useXmtpStore((s) => s.resetRecipient);
 
   const [modalOpen, setModalOpen] = useState(true);
@@ -70,7 +70,7 @@ const AcceptOrDeny = ({ address }: { address: string }) => {
             setModalOpen(false);
             setActiveTab("requests");
             resetRecipient();
-            setConversationTopic("");
+            setConversationId("");
             setChangedConsentCount(changedConsentCount + 1);
           }}>
           {t("consent.block")}

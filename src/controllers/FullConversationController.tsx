@@ -31,7 +31,7 @@ export const FullConversationController: React.FC<
   const [effect, setEffect] = useState<EffectType | undefined>(undefined);
   const { db } = useDb();
   const [messageId, setMessageId] = useState<string>("");
-  const conversationTopic = useXmtpStore((s) => s.conversationTopic);
+  const conversationId = useXmtpStore((s) => s.conversationId);
 
   useEffect(() => {
     void updateConversationIdentity(conversation, db);
@@ -51,7 +51,7 @@ export const FullConversationController: React.FC<
         // In this component so it takes up the entirety of the conversation view
         if (
           msg.content?.effectType === "SNOW" &&
-          msg.conversationTopic === conversationTopic
+          msg.conversationTopic === conversationId
         ) {
           if (!localStorage.getItem(String(msg.id))) {
             setEffect("SNOW");
@@ -60,7 +60,7 @@ export const FullConversationController: React.FC<
         }
         if (
           msg.content?.effectType === "RAIN" &&
-          msg.conversationTopic === conversationTopic
+          msg.conversationTopic === conversationId
         ) {
           if (!localStorage.getItem(String(msg.id))) {
             setEffect("RAIN");
@@ -97,7 +97,7 @@ export const FullConversationController: React.FC<
         lastMessageDateRef.current = msg.sentAt;
         return msg?.content?.effectType || !msg.content ? null : messageDiv;
       }),
-    [messages, conversation, conversationTopic],
+    [messages, conversation, conversationId],
   );
 
   return (

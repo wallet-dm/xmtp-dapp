@@ -14,12 +14,12 @@ export const AddressInputController = () => {
   const recipientOnNetwork = useXmtpStore((s) => s.recipientOnNetwork);
   const recipientInput = useXmtpStore((s) => s.recipientInput);
   const recipientName = useXmtpStore((s) => s.recipientName);
-  const conversationTopic = useXmtpStore((s) => s.conversationTopic);
+  const conversationId = useXmtpStore((s) => s.conversationId);
   const resetRecipient = useXmtpStore((s) => s.resetRecipient);
   const loadingConversations = useXmtpStore((s) => s.loadingConversations);
   const setRecipientInput = useXmtpStore((s) => s.setRecipientInput);
   const setStartedFirstMessage = useXmtpStore((s) => s.setStartedFirstMessage);
-  const setConversationTopic = useXmtpStore((s) => s.setConversationTopic);
+  const setConversationId = useXmtpStore((s) => s.setConversationId);
   const changedConsentCount = useXmtpStore((s) => s.changedConsentCount);
   const setChangedConsentCount = useXmtpStore((s) => s.setChangedConsentCount);
   const activeTab = useXmtpStore((s) => s.activeTab);
@@ -38,10 +38,10 @@ export const AddressInputController = () => {
       // if there's a valid network address, look for an existing conversation
       if (recipientAddress && recipientOnNetwork) {
         let updateSelectedConversation = true;
-        // if there's an existing conversation topic, check if it has the same
-        // peer address as the recipient
-        if (conversationTopic) {
-          const convo = await getCachedByTopic(conversationTopic);
+        // if there's an existing selected conversation, check if it has the
+        // same peer address as the recipient
+        if (conversationId) {
+          const convo = await getCachedByTopic(conversationId);
           // if the peer address is the same, do not attempt to update the
           // select conversation
           if (convo?.peerAddress === recipientAddress) {
@@ -52,20 +52,20 @@ export const AddressInputController = () => {
         // with the recipient's address. if present, select that conversation.
         if (updateSelectedConversation) {
           const existing = await getCachedByPeerAddress(recipientAddress);
-          if (existing && conversationTopic !== existing.topic) {
-            setConversationTopic(existing.topic);
+          if (existing && conversationId !== existing.topic) {
+            setConversationId(existing.topic);
           }
         }
       }
     };
     void selectConversation();
   }, [
-    conversationTopic,
+    conversationId,
     getCachedByPeerAddress,
     getCachedByTopic,
     recipientAddress,
     recipientOnNetwork,
-    setConversationTopic,
+    setConversationId,
   ]);
 
   return (
@@ -104,7 +104,7 @@ export const AddressInputController = () => {
       onLeftIconClick={() => {
         resetRecipient();
         setStartedFirstMessage(false);
-        setConversationTopic("");
+        setConversationId("");
       }}
       onRightIconClick={() => {
         if (activeTab === "messages") {
