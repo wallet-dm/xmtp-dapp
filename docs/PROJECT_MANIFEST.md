@@ -6,21 +6,21 @@ wallet-dm is a browser dapp for secure, end-to-end-encrypted wallet-to-wallet me
 
 ## Tech Stack
 
-| Layer     | Technology | Notes |
-|-----------|-----------|-------|
-| Frontend  | React 18.2 + TypeScript 5 + Vite 5 | SPA, browser-only runtime; mobile-first |
-| Styling   | Tailwind CSS 3.4 | + @tailwindcss/forms, @headlessui/react, @heroicons/react |
-| State     | Zustand 4 (`src/store/xmtp.tsx`) | Dexie 3 local cache belongs to react-sdk era — removed by the migration |
-| Routing   | react-router-dom 6 | Routes: index (connect) → inbox → dm |
-| Messaging | `@xmtp/react-sdk` v6 → **migrating to** `@xmtp/browser-sdk` | Content types: text, reply, remote-attachment, screen-effect |
-| Web3 auth | wagmi 1 + viem 1 + @web3modal/wagmi 3 | Wallet connection is the only identity/auth |
-| Backend   | None | Client talks directly to the XMTP network |
-| Database  | None server-side | Local message cache: Dexie (current) → browser-sdk built-in local DB (OPFS) after migration |
-| Storage   | web3.storage / @web3-storage/w3up-client | Encrypted remote attachments |
-| i18n      | i18next + react-i18next | Translations in `src/locales/` |
-| Testing   | Vitest 1 + happy-dom (unit); Cypress 13 (e2e); Storybook | CI: `.github/workflows/checks.yml`, `e2e-tests.yml` |
-| Linting   | ESLint 8 (@typescript-eslint 7, react, react-hooks, jsx-a11y, cypress) + Prettier 3 | `npm run lint`, `npm run format:check`, `npm run typecheck` |
-| Deploy    | Vercel (`vercel.json`) | Preview deploys per PR |
+| Layer     | Technology                                                                          | Notes                                                                                       |
+| --------- | ----------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------- |
+| Frontend  | React 18.2 + TypeScript 5 + Vite 5                                                  | SPA, browser-only runtime; mobile-first                                                     |
+| Styling   | Tailwind CSS 3.4                                                                    | + @tailwindcss/forms, @headlessui/react, @heroicons/react                                   |
+| State     | Zustand 4 (`src/store/xmtp.tsx`)                                                    | Dexie 3 local cache belongs to react-sdk era — removed by the migration                     |
+| Routing   | react-router-dom 6                                                                  | Routes: index (connect) → inbox → dm                                                        |
+| Messaging | `@xmtp/react-sdk` v6 → **migrating to** `@xmtp/browser-sdk`                         | Content types: text, reply, remote-attachment, screen-effect                                |
+| Web3 auth | wagmi 1 + viem 1 + @web3modal/wagmi 3                                               | Wallet connection is the only identity/auth                                                 |
+| Backend   | None                                                                                | Client talks directly to the XMTP network                                                   |
+| Database  | None server-side                                                                    | Local message cache: Dexie (current) → browser-sdk built-in local DB (OPFS) after migration |
+| Storage   | web3.storage / @web3-storage/w3up-client                                            | Encrypted remote attachments                                                                |
+| i18n      | i18next + react-i18next                                                             | Translations in `src/locales/`                                                              |
+| Testing   | Vitest 1 + happy-dom (unit); Cypress 13 (e2e); Storybook                            | CI: `.github/workflows/checks.yml`, `e2e-tests.yml`                                         |
+| Linting   | ESLint 8 (@typescript-eslint 7, react, react-hooks, jsx-a11y, cypress) + Prettier 3 | `npm run lint`, `npm run format:check`, `npm run typecheck`                                 |
+| Deploy    | Vercel (`vercel.json`)                                                              | Preview deploys per PR                                                                      |
 
 ## Project Structure
 
@@ -65,12 +65,12 @@ Documented as **current model + target model + migration mapping**, because the 
 
 ### Migration mapping
 
-| Current (react-sdk) | Target (browser-sdk) |
-|---|---|
-| `topic` | `conversation.id` |
-| `peerAddress` | `peerInboxId` (requires address↔inboxId resolution, e.g. `canMessage` / inboxId lookup) |
-| `senderAddress` | `senderInboxId` |
-| `CachedConversation` / `CachedMessage` (Dexie) | browser-sdk's built-in local database (OPFS) — the Dexie layer is removed |
+| Current (react-sdk)                            | Target (browser-sdk)                                                                     |
+| ---------------------------------------------- | ---------------------------------------------------------------------------------------- |
+| `topic`                                        | `conversation.id`                                                                        |
+| `peerAddress`                                  | `peerInboxId` (requires address↔inboxId resolution, e.g. `canMessage` / inboxId lookup) |
+| `senderAddress`                                | `senderInboxId`                                                                          |
+| `CachedConversation` / `CachedMessage` (Dexie) | browser-sdk's built-in local database (OPFS) — the Dexie layer is removed                |
 
 Relationships: Client 1—N Conversation; Conversation 1—N DecodedMessage; wallet Identity 1—1 inboxId 1—N installations.
 
@@ -96,29 +96,29 @@ Relationships: Client 1—N Conversation; Conversation 1—N DecodedMessage; wal
 
 ## Task Inputs
 
-*(pipeline-critical — verify before running factory)*
+_(pipeline-critical — verify before running factory)_
 
-| Agent     | Receives                                              | From                              |
-|-----------|-------------------------------------------------------|-----------------------------------|
-| Planner   | Feature request + PROJECT_MANIFEST.md                 | Human / backlog (GitHub Issues)   |
-| Architect | work-packages/wallet-dm.md + Tech Stack section       | Planner                           |
-| Designer  | docs/adr/NNNN-wallet-dm.md + Domain Model section     | Architect (after Gate 1 approval) |
-| Coder     | design/wallet-dm-spec.md + Conventions section        | Designer                          |
-| Reviewer  | Code diff on feature branch + Review Standards section | Coder                             |
-| Deployer  | review-reports/wallet-dm-review.md + Release Criteria section | Reviewer (after Gate 2 approval) |
+| Agent     | Receives                                                      | From                              |
+| --------- | ------------------------------------------------------------- | --------------------------------- |
+| Planner   | Feature request + PROJECT_MANIFEST.md                         | Human / backlog (GitHub Issues)   |
+| Architect | work-packages/wallet-dm.md + Tech Stack section               | Planner                           |
+| Designer  | docs/adr/NNNN-wallet-dm.md + Domain Model section             | Architect (after Gate 1 approval) |
+| Coder     | design/wallet-dm-spec.md + Conventions section                | Designer                          |
+| Reviewer  | Code diff on feature branch + Review Standards section        | Coder                             |
+| Deployer  | review-reports/wallet-dm-review.md + Release Criteria section | Reviewer (after Gate 2 approval)  |
 
 ## Services to Connect
 
-| Service | Purpose | Config |
-|---------|---------|--------|
-| GitHub (wallet-dm/xmtp-dapp) | Source control + PRs | Already set up |
-| GitHub Issues | Issue tracking | Already set up |
-| GitHub Actions | CI (checks.yml, e2e-tests.yml) | Already set up |
-| Vercel | Hosting + preview deploys | Already set up (`vercel.json`) |
-| Discord | Comms | https://discord.gg/6MAWksNwn |
-| XMTP network | Messaging transport | `env: dev \| production` via env vars |
-| WalletConnect / web3modal | Wallet connection (auth) | Project ID env var |
-| web3.storage | Encrypted remote attachment storage | API token env var |
+| Service                      | Purpose                             | Config                                |
+| ---------------------------- | ----------------------------------- | ------------------------------------- |
+| GitHub (wallet-dm/xmtp-dapp) | Source control + PRs                | Already set up                        |
+| GitHub Issues                | Issue tracking                      | Already set up                        |
+| GitHub Actions               | CI (checks.yml, e2e-tests.yml)      | Already set up                        |
+| Vercel                       | Hosting + preview deploys           | Already set up (`vercel.json`)        |
+| Discord                      | Comms                               | https://discord.gg/6MAWksNwn          |
+| XMTP network                 | Messaging transport                 | `env: dev \| production` via env vars |
+| WalletConnect / web3modal    | Wallet connection (auth)            | Project ID env var                    |
+| web3.storage                 | Encrypted remote attachment storage | API token env var                     |
 
 ## Success Criteria
 
@@ -141,7 +141,7 @@ Relationships: Client 1—N Conversation; Conversation 1—N DecodedMessage; wal
 
 ## Review Standards
 
-*(default — customize for this project)*
+_(default — customize for this project)_
 
 ### Spec Compliance
 
@@ -174,7 +174,7 @@ Relationships: Client 1—N Conversation; Conversation 1—N DecodedMessage; wal
 
 ## Release Criteria
 
-*(default — customize for this project)*
+_(default — customize for this project)_
 
 ### Required (all must PASS)
 
