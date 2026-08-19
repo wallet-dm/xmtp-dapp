@@ -172,7 +172,11 @@ const useInitXmtpClient = () => {
           pendingClientRef.current = xmtpClient;
           // an installation registered on a previous visit is stored in the
           // local DB and needs no further signatures
-          if (await xmtpClient.isRegistered()) {
+          const registered = await xmtpClient.isRegistered();
+          if (isStale()) {
+            return;
+          }
+          if (registered) {
             setStatus("enabled");
           } else {
             // demo mode, the mock wallet signs without prompting the user,
