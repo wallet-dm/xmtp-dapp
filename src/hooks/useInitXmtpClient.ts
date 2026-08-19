@@ -67,6 +67,7 @@ const useInitXmtpClient = () => {
   const { connect: connectWallet } = useConnect();
   const setClientName = useXmtpStore((s) => s.setClientName);
   const setClientAvatar = useXmtpStore((s) => s.setClientAvatar);
+  const setStoreClient = useXmtpStore((s) => s.setClient);
 
   /**
    * XMTP v3 registers an identity with a single wallet signature, but the
@@ -232,6 +233,9 @@ const useInitXmtpClient = () => {
           setSigning(false);
           pendingClientRef.current = null;
           setClient(xmtpClient);
+          // mirror the client into the store so consumers outside the
+          // onboarding flow can reach it without this hook
+          setStoreClient(xmtpClient);
           const name = await throttledFetchAddressName(address);
           if (name) {
             const avatar = await throttledFetchEnsAvatar({
@@ -256,6 +260,7 @@ const useInitXmtpClient = () => {
     enablePromise,
     setClientAvatar,
     setClientName,
+    setStoreClient,
     walletClient,
   ]);
 
