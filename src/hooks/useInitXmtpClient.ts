@@ -1,39 +1,24 @@
-import type { ClientOptions } from "@xmtp/react-sdk";
-import { Client, useClient, useCanMessage } from "@xmtp/react-sdk";
-import { useEffect, useMemo, useRef, useState, useCallback } from "react";
+import type { ClientOptions, Identifier, Signer } from "@xmtp/browser-sdk";
+import { Client, IdentifierKind } from "@xmtp/browser-sdk";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useConnect, useWalletClient } from "wagmi";
 import type { WalletClient } from "viem";
-import type { ETHAddress } from "../helpers";
+import { toBytes } from "viem";
 import {
   getAppVersion,
   getEnv,
+  getXmtpApiUrl,
   isAppEnvDemo,
-  loadKeys,
-  storeKeys,
   throttledFetchAddressName,
   throttledFetchEnsAvatar,
 } from "../helpers";
 import { mockConnector } from "../helpers/mockConnector";
 import { useXmtpStore } from "../store/xmtp";
-import { useDivviReferral } from "./useDivviReferral";
-import "wagmi/window";
 
 type ClientStatus = "new" | "created" | "enabled";
 
 type ResolveReject<T = void> = (value: T | PromiseLike<T>) => void;
 
-interface Ethereum {
-  request(args: {
-    method: string;
-    params: {
-      [snapName: string]: object;
-    };
-  }): Promise<{
-    [snapName: string]: {
-      enabled: boolean;
-    };
-  }>;
-}
 /**
  * This is a helper function for creating a new promise and getting access
  * to the resolve and reject callbacks for external use.
@@ -52,87 +37,80 @@ const makePromise = <T = void>() => {
   };
 };
 
-// XMTP client options
-const clientOptions = {
-  apiUrl: import.meta.env.VITE_XMTP_API_URL,
-  env: getEnv(),
+// XMTP client options; typed without codecs so Client.create's codec
+// generic falls back to the built-in content types
+const clientEnv = getEnv();
+const clientOptions: Omit<ClientOptions, "codecs"> = {
+  env: clientEnv,
+  apiUrl: getXmtpApiUrl(),
   appVersion: getAppVersion(),
-} as Partial<ClientOptions>;
+};
 
 const useInitXmtpClient = () => {
   // track if onboarding is in progress
   const onboardingRef = useRef(false);
   const walletClientRef = useRef<WalletClient | null>();
-  // XMTP address status
+  // client built by an onboarding flow that has not finished yet; a
+  // superseding flow must close it to release its worker and local DB
+  const pendingClientRef = useRef<Client | null>(null);
+  const [client, setClient] = useState<Client>();
+  // XMTP identity status
   const [status, setStatus] = useState<ClientStatus | undefined>();
+  // is the client being built or the network being queried?
+  const [initializing, setInitializing] = useState(false);
   // is there a pending signature?
   const [signing, setSigning] = useState(false);
+  // bumped when registration fails so the gate promises below re-arm and the
+  // onboarding flow restarts, letting the user retry the signature
+  const [registrationAttempt, setRegistrationAttempt] = useState(0);
   const { data: walletClient } = useWalletClient();
   const { connect: connectWallet } = useConnect();
   const setClientName = useXmtpStore((s) => s.setClientName);
   const setClientAvatar = useXmtpStore((s) => s.setClientAvatar);
 
-  const { getReferralDataSuffix } = useDivviReferral({
-    consumer: "0x4Fe3a15a89cbaA505305B2e3C2C7dD81Bf1DD4C9", // Replace with your Divvi Identifier
-    providers: [
-      "0x0423189886d7966f0dd7e7d256898daeee625dca",
-      "0xc95876688026be9d6fa7a7c33328bd013effa2bb",
-      "0x7beb0e14f8d2e6f6678cc30d867787b384b19e20",
-    ],
-  });
-
   /**
-   * In order to have more granular control of the onboarding process, we must
-   * create promises that we can resolve externally. These promises will allow
-   * us to control when the user is prompted for signatures during the account
-   * creation process.
+   * XMTP v3 registers an identity with a single wallet signature, but the
+   * onboarding UI still walks users through explicit steps. These externally
+   * resolvable promises park the onboarding flow until the user clicks
+   * through the relevant step, so the wallet prompt appears in response to
+   * that click.
    */
 
-  // create promise, callback, and resolver for controlling the display of the
-  // create account signature.
-  const { createResolve, preCreateIdentityCallback, resolveCreate } =
-    useMemo(() => {
-      const { promise: createPromise, resolve } = makePromise();
-      return {
-        createResolve: resolve,
-        preCreateIdentityCallback: () => createPromise,
-        // executing this function will result in displaying the create account
-        // signature prompt
-        resolveCreate: () => {
-          createResolve();
-          setSigning(true);
-        },
-      };
-      // if the walletClient changes during the onboarding process, reset the promise
-      // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [walletClient]);
+  // promise and resolver gating registration of a brand new identity (the
+  // "create" step of the onboarding UI)
+  const { createPromise, resolveCreate } = useMemo(() => {
+    const { promise, resolve } = makePromise();
+    return {
+      createPromise: promise,
+      // executing this function lets the onboarding flow continue with the
+      // registration signature
+      resolveCreate: () => {
+        resolve();
+        setSigning(true);
+      },
+    };
+    // if the walletClient changes during the onboarding process, or a failed
+    // registration is retried, reset the promise
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [walletClient, registrationAttempt]);
 
-  // create promise, callback, and resolver for controlling the display of the
-  // enable account signature.
-  const { enableResolve, preEnableIdentityCallback, resolveEnable } =
-    useMemo(() => {
-      const { promise: enablePromise, resolve } = makePromise();
-      return {
-        enableResolve: resolve,
-        // this is called right after signing the create identity signature
-        preEnableIdentityCallback: () => {
-          setSigning(false);
-          setStatus("created");
-          return enablePromise;
-        },
-        // executing this function will result in displaying the enable account
-        // signature prompt
-        resolveEnable: () => {
-          enableResolve();
-          setSigning(true);
-        },
-      };
-      // if the walletClient changes during the onboarding process, reset the promise
-      // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [walletClient]);
-
-  const { client, isLoading, initialize } = useClient();
-  const { canMessageStatic: canMessageUser } = useCanMessage();
+  // promise and resolver gating registration when the identity already
+  // exists on the network (the "enable" step authorizes this installation)
+  const { enablePromise, resolveEnable } = useMemo(() => {
+    const { promise, resolve } = makePromise();
+    return {
+      enablePromise: promise,
+      // executing this function lets the onboarding flow continue with the
+      // registration signature
+      resolveEnable: () => {
+        resolve();
+        setSigning(true);
+      },
+    };
+    // if the walletClient changes during the onboarding process, or a failed
+    // registration is retried, reset the promise
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [walletClient, registrationAttempt]);
 
   // if this is an app demo, connect to the temporary wallet
   useEffect(() => {
@@ -145,34 +123,8 @@ const useInitXmtpClient = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Create a wrapper that modifies the transaction data
-  const getModifiedWalletClient = useCallback(async () => {
-    if (!walletClient) return null;
-
-    const dataSuffix = await getReferralDataSuffix();
-
-    // Create a modified version of the wallet client
-    const modifiedClient = {
-      ...walletClient,
-      sendTransaction: async (args: any) => {
-        // Append referral data to the transaction data
-        const modifiedArgs = {
-          ...args,
-          data: args.data + dataSuffix,
-        };
-        return walletClient.sendTransaction(modifiedArgs);
-      },
-    };
-
-    // Note: We need to use type assertions here because of version mismatches between
-    // the viem types used by XMTP and our project. This is a temporary solution until
-    // we can align the versions.
-    return modifiedClient as any;
-  }, [walletClient, getReferralDataSuffix]);
-
-  // the code in this effect should only run once
   useEffect(() => {
-    const updateStatus = async () => {
+    const startOnboarding = async () => {
       // onboarding is in progress
       if (onboardingRef.current) {
         // the walletClient has changed, restart the onboarding process
@@ -187,123 +139,96 @@ const useInitXmtpClient = () => {
       // skip this if we already have a client and ensure we have a walletClient
       if (!client && walletClient) {
         onboardingRef.current = true;
-        const { address } = walletClient.account;
-        let keys: Uint8Array | undefined = loadKeys(address);
-        // check if we already have the keys
-        if (keys) {
-          // resolve client promises
-          createResolve();
-          enableResolve();
-          // no signatures needed
-          setStatus("enabled");
-        } else {
-          // demo mode, wallet won't require any signatures
-          if (isAppEnvDemo()) {
-            // resolve client promises
-            createResolve();
-            enableResolve();
-          } else {
-            // no keys found, but maybe the address has already been created
-            // let's check
-            const canMessage = await canMessageUser(address, clientOptions);
-            if (canMessage) {
-              // resolve client promise
-              createResolve();
-              // identity has been created
-              setStatus("created");
-            } else {
-              // no identity on the network
-              setStatus("new");
-            }
+        // close the client of a superseded flow so this one takes over its
+        // worker and local DB
+        pendingClientRef.current?.close();
+        pendingClientRef.current = null;
+        setInitializing(true);
+        // by the time an await resumes, the ref effect below has recorded any
+        // newer walletClient, revealing that this flow has been superseded
+        const isStale = () => walletClientRef.current !== walletClient;
+        try {
+          const { address } = walletClient.account;
+          const identifier: Identifier = {
+            identifier: address.toLowerCase(),
+            identifierKind: IdentifierKind.Ethereum,
+          };
+          const signer: Signer = {
+            type: "EOA",
+            getIdentifier: () => identifier,
+            signMessage: async (message: string) =>
+              toBytes(await walletClient.signMessage({ message })),
+          };
+          // build the client and its local identity DB up front; with
+          // disableAutoRegister the wallet is not asked to sign anything yet
+          const xmtpClient = await Client.create(signer, {
+            ...clientOptions,
+            disableAutoRegister: true,
+          });
+          if (isStale()) {
+            xmtpClient.close();
+            return;
           }
-
-          if (window.ethereum?.isMetaMask) {
-            // Snaps flow — TODO: move to SDK side after ironing out all edge cases.
-            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call
-            const browserSupportSnaps = await Client.isSnapsReady();
-            if (browserSupportSnaps) {
-              try {
-                const result = await (
-                  window.ethereum as unknown as Ethereum
-                ).request({
-                  method: "wallet_requestSnaps",
-                  params: {
-                    "npm:@xmtp/snap": {},
-                  },
-                });
-
-                if (result && result?.["npm:@xmtp/snap"].enabled) {
-                  createResolve();
-                  enableResolve();
-                  setStatus("enabled");
-
-                  keys = undefined;
-                  clientOptions.useSnaps = true;
-                  clientOptions.preCreateIdentityCallback =
-                    preCreateIdentityCallback;
-                  clientOptions.preEnableIdentityCallback =
-                    preEnableIdentityCallback;
-                } else if (result && !result.enabled) {
-                  throw new Error("snaps not enabled with XMTP");
-                }
-              } catch (error) {
-                await updateStatus();
-              }
-            } else {
-              await updateStatus();
-            }
+          pendingClientRef.current = xmtpClient;
+          // an installation registered on a previous visit is stored in the
+          // local DB and needs no further signatures
+          if (await xmtpClient.isRegistered()) {
+            setStatus("enabled");
           } else {
-            try {
-              // Get modified wallet client with referral data
-              const modifiedClient = await getModifiedWalletClient();
-
-              if (!modifiedClient) {
-                throw new Error("Failed to create modified wallet client");
-              }
-
-              // get client keys with referral data
-              // Note: Using type assertion here due to viem version mismatch
-              keys = await Client.getKeys(modifiedClient as any, {
-                ...clientOptions,
-                skipContactPublishing: true,
-                persistConversations: false,
-                preCreateIdentityCallback,
-                preEnableIdentityCallback,
-              });
-
-              setStatus("enabled");
-              setSigning(false);
-              storeKeys(address, keys);
-            } catch (error) {
-              console.error(
-                "Error initializing XMTP client with referral:",
-                error,
+            // demo mode, the mock wallet signs without prompting the user,
+            // so skip the onboarding steps
+            if (!isAppEnvDemo()) {
+              // the identity may already exist on the network, e.g. it was
+              // registered from another device or app
+              const canMessageMap = await Client.canMessage(
+                [identifier],
+                clientEnv,
               );
-              // Fallback to regular initialization if referral fails
-              keys = await Client.getKeys(walletClient as any, {
-                ...clientOptions,
-                skipContactPublishing: true,
-                persistConversations: false,
-                preCreateIdentityCallback,
-                preEnableIdentityCallback,
-              });
-              setStatus("enabled");
-              setSigning(false);
-              storeKeys(address, keys);
+              const registeredOnNetwork =
+                canMessageMap.get(address.toLowerCase()) ?? false;
+              if (isStale()) {
+                return;
+              }
+              setInitializing(false);
+              if (registeredOnNetwork) {
+                // identity exists, wait for the user to authorize this
+                // installation
+                setStatus("created");
+                await enablePromise;
+              } else {
+                // no identity on the network, wait for the user to create one
+                setStatus("new");
+                await createPromise;
+              }
+              if (isStale()) {
+                return;
+              }
             }
+            try {
+              // registers the identity (or just this installation) with a
+              // single wallet signature requested through the signer
+              await xmtpClient.register();
+            } catch (error) {
+              console.error("Error registering XMTP identity:", error);
+              setSigning(false);
+              // let the user retry the signature: bumping the attempt counter
+              // re-arms the gate promises and restarts the flow, while the
+              // status set above keeps the UI on the same step; in demo mode
+              // no user gates the retry, so restarting would loop forever
+              if (!isAppEnvDemo()) {
+                setRegistrationAttempt((attempt) => attempt + 1);
+              }
+              return;
+            }
+            if (isStale()) {
+              return;
+            }
+            setStatus("enabled");
           }
-        }
-        // initialize client
-        const xmtpClient = await initialize({
-          keys,
-          options: clientOptions,
-          // @ts-expect-error types
-          signer: walletClient,
-        });
-        if (xmtpClient) {
-          const name = await throttledFetchAddressName(
-            xmtpClient.address as ETHAddress,
-          );
+          setSigning(false);
+          pendingClientRef.current = null;
+          setClient(xmtpClient);
+          const name = await throttledFetchAddressName(address);
           if (name) {
             const avatar = await throttledFetchEnsAvatar({
               name,
@@ -311,14 +236,24 @@ const useInitXmtpClient = () => {
             setClientAvatar(avatar);
             setClientName(name);
           }
+        } catch (error) {
+          console.error("Error initializing XMTP client:", error);
+          setSigning(false);
+        } finally {
+          onboardingRef.current = false;
+          setInitializing(false);
         }
-
-        onboardingRef.current = false;
       }
     };
-    void updateStatus();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [client, walletClient, getModifiedWalletClient]);
+    void startOnboarding();
+  }, [
+    client,
+    createPromise,
+    enablePromise,
+    setClientAvatar,
+    setClientName,
+    walletClient,
+  ]);
 
   // it's important that this effect runs last
   useEffect(() => {
@@ -327,7 +262,7 @@ const useInitXmtpClient = () => {
 
   return {
     client,
-    isLoading: isLoading || signing,
+    isLoading: initializing || signing,
     resolveCreate,
     resolveEnable,
     status,
