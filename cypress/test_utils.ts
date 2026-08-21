@@ -1,7 +1,12 @@
 /* eslint-disable cypress/no-unnecessary-waiting */
 import { ENVIRONMENT } from "../src/helpers";
 
-export const TIMEOUT = 40000;
+/**
+ * browser-sdk downloads an ~11MB WASM bundle and registers an installation on
+ * the network before the app is usable, which is far slower than the V2 client
+ * it replaced.
+ */
+export const TIMEOUT = 90000;
 
 export const sizes = ["macbook-16", "iphone-x"] as Cypress.ViewportPreset[];
 
@@ -23,6 +28,43 @@ export const startDemoEnv = () => {
   cy.visit(Cypress.env("server_url"));
   localStorage.setItem(ENVIRONMENT.DEMO, String(true));
 };
+
+/**
+ * The address of the throwaway wallet demo mode connected.
+ *
+ * Tests message this address rather than a fixed one. A hardcoded peer has to
+ * be a real registered inbox, and every CI run would register a new
+ * installation against it until it hit XMTP's ten-installation cap. Demo mode
+ * already mints a fresh wallet per run, so messaging itself keeps each run
+ * self-contained and needs nothing provisioned up front.
+ */
+export const getDemoWalletAddress = () =>
+  cy
+    .window({ timeout: TIMEOUT })
+    .should((win) => {
+      // written once the mock connector finishes connecting
+      expect(win.localStorage.getItem("wagmi.store"), "wagmi store").to.not.be
+        .null;
+    })
+    .then((win) => {
+      const raw = win.localStorage.getItem("wagmi.store") ?? "{}";
+      const account = (
+        JSON.parse(raw) as { state?: { data?: { account?: string } } }
+      )?.state?.data?.account;
+      expect(account ?? "", "connected demo wallet address").to.match(
+        /^0x[0-9a-fA-F]{40}$/,
+      );
+      return account as string;
+    });
+
+/** Mirrors how AddressInputController renders a resolved recipient. */
+export const expectedRecipientDisplay = (
+  address: string,
+  size: Cypress.ViewportPreset,
+) =>
+  size === "macbook-16"
+    ? address
+    : `${address.substring(0, 6)}...${address.substring(address.length - 4)}`;
 
 const enterWalletAddress = (testUser: string) => {
   checkElement("message-to-input").type(testUser, { delay: 1 });

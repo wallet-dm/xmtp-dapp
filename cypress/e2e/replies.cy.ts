@@ -5,6 +5,7 @@ import {
   sendMessages,
   checkMessageOutput,
   checkMissingElement,
+  getDemoWalletAddress,
   sizes,
 } from "../test_utils";
 
@@ -18,16 +19,15 @@ sizes.forEach((size) => {
       },
     },
     () => {
-      const testUserWithXmtpAccount =
-        "0x78BfD39428C32Be149892d64bEE6C6f90aedEec1";
-
       const shortMessage = "hello";
       const replyMessage = "this is a reply";
       beforeEach(() => {
         cy.viewport(size);
         startDemoEnv();
         checkElement("conversation-list-header");
-        sendAndEnterMessage(testUserWithXmtpAccount, shortMessage);
+        getDemoWalletAddress().then((peer) => {
+          sendAndEnterMessage(peer, shortMessage);
+        });
         checkElement("message-tile-text").children().first().click();
         checkElement("reply-bar");
         checkElement("reply-icon").click();
@@ -35,17 +35,12 @@ sizes.forEach((size) => {
       });
 
       it("can reply to a message", () => {
-        sendMessages(1, replyMessage, testUserWithXmtpAccount, false);
+        sendMessages(1, replyMessage, "", false);
         checkMessageOutput(2, replyMessage);
       });
       it("can send multiple replies to a message", () => {
-        sendMessages(1, replyMessage, testUserWithXmtpAccount, false);
-        sendMessages(
-          1,
-          "here is another reply",
-          testUserWithXmtpAccount,
-          false,
-        );
+        sendMessages(1, replyMessage, "", false);
+        sendMessages(1, "here is another reply", "", false);
         checkMessageOutput(3, "here is another reply");
       });
       it("can toggle replies view", () => {
@@ -72,7 +67,7 @@ sizes.forEach((size) => {
         checkElement("replies-container");
 
         // Send reply
-        sendMessages(1, replyMessage, testUserWithXmtpAccount, false);
+        sendMessages(1, replyMessage, "", false);
 
         // Exit
         checkElement("replies-close-icon").click();
