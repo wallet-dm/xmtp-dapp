@@ -63,10 +63,16 @@ XMTP Labs hosts the following deployments of the XMTP Inbox chat app:
 
 ### Wallet connections
 
-The XMTP Inbox app uses [RainbowKit](https://www.rainbowkit.com/) to enable users to connect a Coinbase Wallet, MetaMask, Rainbow, Trust Wallet, or WalletConnect-compatible wallet app.
+The app uses [Web3Modal](https://docs.reown.com/appkit/overview) with [wagmi](https://wagmi.sh/) to enable users to connect a Coinbase Wallet, MetaMask, Valora, Trust Wallet, or any WalletConnect-compatible wallet app.
 
 > **Note**  
-> As of WalletConnect v2, a project id is required. This is currently hardcoded with a placeholder value, but if you'd like to use WalletConnect, you can [generate your own](https://www.rainbowkit.com/docs/migration-guide#2-supply-a-walletconnect-cloud-projectid) and edit the placeholder value in `main.tsx`.
+> A WalletConnect project ID is **required** — `createWeb3Modal` throws at module scope without one, so the app renders a blank page. Generate one for free at [cloud.reown.com](https://cloud.reown.com), then put it in a `.env.local` file at the repo root:
+>
+> ```
+> VITE_PROJECT_ID=your32characterhexprojectid
+> ```
+>
+> `.env*` is gitignored. CI reads the same value from the `PROJECT_ID` GitHub Actions secret.
 
 This app also uses a [viem Account](https://viem.sh/docs/accounts/privateKey.html) interface to sign transactions and messages with a given private key. The XMTP message API client needs this Account to enable and sign messages that create and enable their XMTP identity. This XMTP identity is what enables a user to send and receive messages.
 
