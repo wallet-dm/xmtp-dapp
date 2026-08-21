@@ -1,37 +1,9 @@
 import { createWeb3Modal, defaultWagmiConfig } from "@web3modal/wagmi/react";
-import {
-  ContentTypeScreenEffect,
-  ScreenEffectCodec,
-} from "@xmtp/experimental-content-type-screen-effect";
-import {
-  XMTPProvider,
-  attachmentContentTypeConfig,
-  reactionContentTypeConfig,
-  replyContentTypeConfig,
-} from "@xmtp/react-sdk";
 import { createRoot } from "react-dom/client";
 import { WagmiConfig } from "wagmi";
 import { celo, mainnet } from "wagmi/chains";
 import App from "./controllers/AppController";
 import "./polyfills";
-
-// Increment with any schema change; e.g. adding support for a new content type
-const DB_VERSION = 6;
-
-export const ScreenEffectCodecInstance = new ScreenEffectCodec();
-
-const customConfig = {
-  codecs: [ScreenEffectCodecInstance],
-  contentTypes: [ContentTypeScreenEffect.toString()],
-  namespace: "screenEffects",
-};
-
-const contentTypeConfigs = [
-  attachmentContentTypeConfig,
-  reactionContentTypeConfig,
-  replyContentTypeConfig,
-  customConfig,
-];
 
 // Required field as of WalletConnect v2.
 const projectId = import.meta.env.VITE_PROJECT_ID;
@@ -59,12 +31,11 @@ createWeb3Modal({
   ],
 });
 
+// The XMTP client is provided inside AppController, behind the single-tab
+// guard, so a blocked tab never opens a second connection to the local
+// database. Codecs are registered on the client itself.
 createRoot(document.getElementById("root") as HTMLElement).render(
   <WagmiConfig config={wagmiConfig}>
-    <XMTPProvider
-      contentTypeConfigs={contentTypeConfigs}
-      dbVersion={DB_VERSION}>
-      <App />
-    </XMTPProvider>
+    <App />
   </WagmiConfig>,
 );

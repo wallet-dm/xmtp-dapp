@@ -1,32 +1,39 @@
 import { useWeb3Modal } from "@web3modal/wagmi/react";
-import { useClient } from "@xmtp/react-sdk";
 import { useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import { useAccount, useDisconnect } from "wagmi";
+import { useDisconnect } from "wagmi";
+import { Error as ErrorPage } from "../component-library/components/Error/Error";
+import { InstallationLimit } from "../component-library/components/InstallationLimit/InstallationLimit";
 import { OnboardingStep } from "../component-library/components/OnboardingStep/OnboardingStep";
-import { classNames, isAppEnvDemo, wipeKeys } from "../helpers";
+import { classNames, isAppEnvDemo } from "../helpers";
 import useInitXmtpClient from "../hooks/useInitXmtpClient";
 import { useXmtpStore } from "../store/xmtp";
 
 const OnboardingPage = () => {
   const navigate = useNavigate();
   const resetXmtpState = useXmtpStore((state) => state.resetXmtpState);
-  const { address } = useAccount();
   const { open } = useWeb3Modal();
-  const { client, isLoading, status, setStatus, resolveCreate, resolveEnable } =
-    useInitXmtpClient();
+  const {
+    client,
+    error,
+    isLoading,
+    status,
+    resolveCreate,
+    retry,
+    disconnect,
+    installations,
+    revokeInstallations,
+  } = useInitXmtpClient();
   const { reset: resetWagmi, disconnect: disconnectWagmi } = useDisconnect();
-  const { disconnect: disconnectClient } = useClient();
 
   useEffect(() => {
-    const routeToInbox = () => {
-      if (client) {
-        navigate("/inbox");
-      }
-    };
-    routeToInbox();
+    // only route once the installation is registered; a client that still
+    // needs its signature is not usable for messaging
+    if (client && status === "ready") {
+      navigate("/inbox");
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [client]);
+  }, [client, status]);
 
   const step = useMemo(() => {
     // special demo case that will skip onboarding
@@ -34,18 +41,43 @@ const OnboardingPage = () => {
       return 0;
     }
     switch (status) {
-      // XMTP identity not created
-      case "new":
+      // client exists, waiting on the one signature that registers it
+      case "unregistered":
+      case "signing":
         return 2;
-      // XMTP identity created, but not enabled
-      case "created":
-        return 3;
       // waiting on wallet connection
-      case undefined:
       default:
         return 1;
     }
   }, [status]);
+
+  const handleDisconnect = () => {
+    void disconnect();
+    disconnectWagmi();
+    resetWagmi();
+    resetXmtpState();
+  };
+
+  // Registration cannot succeed until a slot is freed, so this gets a screen
+  // of its own rather than the generic retry.
+  if (status === "installation-limit") {
+    return (
+      <InstallationLimit
+        installations={installations}
+        isLoading={isLoading}
+        onRevoke={() => {
+          void revokeInstallations();
+        }}
+        onDisconnect={handleDisconnect}
+      />
+    );
+  }
+
+  // Without this the error status falls through to the connect step, which
+  // looks like nothing happened and gives the user nothing to act on.
+  if (status === "error") {
+    return <ErrorPage onConnect={retry} details={error?.message} />;
+  }
 
   return (
     <div className={classNames("h-dvh", "w-full", "overflow-auto")}>
@@ -54,17 +86,7 @@ const OnboardingPage = () => {
         isLoading={isLoading}
         onConnect={open}
         onCreate={resolveCreate}
-        onEnable={resolveEnable}
-        onDisconnect={() => {
-          if (client) {
-            void disconnectClient();
-          }
-          disconnectWagmi();
-          setStatus(undefined);
-          wipeKeys(address ?? "");
-          resetWagmi();
-          resetXmtpState();
-        }}
+        onDisconnect={handleDisconnect}
       />
     </div>
   );

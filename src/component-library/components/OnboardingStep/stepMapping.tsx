@@ -1,7 +1,6 @@
 export const enum ctaStep {
   CONNECT = "CONNECT",
   CREATE = "CREATE",
-  ENABLE = "ENABLE",
 }
 
 export const stepMapping: Record<
@@ -58,22 +57,6 @@ export const stepMapping: Record<
     loading: {
       header: "onboarding.creating_header",
       subheader: "onboarding.creating_subheader",
-      cta: null,
-      subtext: null,
-      disconnect_tip: "common.disconnect_tip",
-    },
-  },
-  3: {
-    default: {
-      header: "onboarding.enable_header",
-      subheader: "onboarding.enable_subheader",
-      cta: ctaStep.ENABLE,
-      subtext: null,
-      disconnect_tip: "common.disconnect_tip",
-    },
-    loading: {
-      header: "onboarding.enabling_header",
-      subheader: "onboarding.enabling_subheader",
       cta: null,
       subtext: null,
       disconnect_tip: "common.disconnect_tip",

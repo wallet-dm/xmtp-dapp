@@ -1,4 +1,4 @@
-import type { Attachment } from "@xmtp/content-type-remote-attachment";
+import type { Attachment } from "@xmtp/browser-sdk";
 import { useReactMediaRecorder } from "react-media-recorder-2";
 import { useTranslation } from "react-i18next";
 import { useXmtpStore } from "../store/xmtp";
@@ -43,7 +43,7 @@ export const useVoiceRecording = ({
           const newAttachment = {
             filename: "VoiceRecording.wav",
             mimeType: fileType,
-            data: new Uint8Array(result),
+            content: new Uint8Array(result),
           };
 
           setAttachment(newAttachment);

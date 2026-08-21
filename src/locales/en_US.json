@@ -10,12 +10,7 @@
     "create_subheader": "An XMTP identity is like a messaging account. You'll create your XMTP identity using a wallet signature.",
     "create_button": "Create XMTP identity",
     "creating_header": "Creating your XMTP identity...",
-    "creating_subheader": "Click <strong>Sign</strong> to create your XMTP identity. Your signature proves that you own and control your XMTP identity.",
-    "enable_header": "Enable your XMTP identity",
-    "enable_subheader": "Enabling your XMTP identity is like setting the password for your inbox.",
-    "enable_button": "Enable XMTP identity",
-    "enabling_header": "Enabling your XMTP identity...",
-    "enabling_subheader": "Click <strong>Sign</strong> to create your password. You'll be prompted to click <strong>Sign</strong> to provide it whenever you access your inbox."
+    "creating_subheader": "Click <strong>Sign</strong> to create your XMTP identity. Your signature proves that you own and control your XMTP identity."
   },
   "messages": {
     "attachment": "Attachment",
@@ -54,7 +49,9 @@
     "reaction_preview": "Reacted with {{REACTION}} to earlier message",
     "unreaction_preview": "Unreacted with {{REACTION}} to earlier message",
     "reply": "Reply",
-    "view_replies": "View replies"
+    "view_replies": "View replies",
+    "message_send_failed": "Message not sent. Check your connection and try again.",
+    "message_no_recipient": "Choose someone to message first."
   },
   "attachments": {
     "unable_to_display": "Unable to display attachment",
@@ -75,12 +72,14 @@
     "file_too_large": "Please choose attachments smaller than 5 MB",
     "file_unsupported": "[Attachment] Cannot display \"{{FILENAME}}\". This app does not support attachments yet.",
     "loading": "Loading...",
-    "microphone_not_enabled": "Make sure your microphone is enabled"
+    "microphone_not_enabled": "Make sure your microphone is enabled",
+    "tab_conflict_header": "Wallet DM is open in another tab",
+    "tab_conflict_subheader": "Your messages are stored locally and can only be used by one tab at a time. Close the other tab, or continue here instead.",
+    "tab_conflict_cta": "Use here instead"
   },
   "common": {
     "disconnect": "Disconnect wallet",
     "private_key_note": "No private keys will be shared.",
-    "step_of_2": "Step {{NUM}} of 2",
     "disconnect_tip": "<strong>Tip</strong>: If clicking <strong>Disconnect wallet</strong> doesn’t disconnect your wallet, please use your wallet extension directly to disconnect from this app.",
     "input_label": "To",
     "share_code": "Share the power of the XMTP network with your friends, family and colleagues",
@@ -105,5 +104,11 @@
     "filepicker": "File picker",
     "start_message": "Start new message",
     "submit_message": "Submit message"
+  },
+  "installations": {
+    "limit_header": "This wallet has reached its device limit",
+    "limit_subheader": "XMTP allows 10 registered installations per wallet, and all {{COUNT}} are in use. To use Wallet DM here, revoke the existing ones first.",
+    "limit_warning": "Revoking signs this wallet out of XMTP on every other browser and device. Your conversations are kept — each device simply has to sign in again.",
+    "revoke_button": "Revoke all installations"
   }
 }

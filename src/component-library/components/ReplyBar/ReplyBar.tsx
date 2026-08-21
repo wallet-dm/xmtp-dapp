@@ -1,10 +1,10 @@
-import type { CachedConversation, CachedMessageWithId } from "@xmtp/react-sdk";
 import { useTranslation } from "react-i18next";
+import type { AppDm, AppMessage } from "../../../contexts/XmtpContext";
 import { useXmtpStore } from "../../../store/xmtp";
 
 export type ReplyBarProps = {
-  conversation: CachedConversation;
-  message: CachedMessageWithId;
+  conversation: AppDm;
+  message: AppMessage;
   setOnHover: (hover: boolean) => void;
 };
 

@@ -26,7 +26,7 @@ export const HeaderDropdown = ({
   const activeTab = useXmtpStore((s) => s.activeTab);
   const setActiveTab = useXmtpStore((s) => s.setActiveTab);
   const resetRecipient = useXmtpStore((s) => s.resetRecipient);
-  const setConversationTopic = useXmtpStore((s) => s.setConversationTopic);
+  const setConversationId = useXmtpStore((s) => s.setConversationId);
 
   const tabs: {
     name: ActiveTab;
@@ -56,7 +56,7 @@ export const HeaderDropdown = ({
             onClick={() => {
               setActiveTab(name);
               resetRecipient();
-              setConversationTopic();
+              setConversationId();
             }}>
             {t(`consent.${name}`)}
           </button>

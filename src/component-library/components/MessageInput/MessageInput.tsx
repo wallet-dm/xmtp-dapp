@@ -6,7 +6,7 @@ import {
   useRef,
   useState,
 } from "react";
-import type { Attachment } from "@xmtp/content-type-remote-attachment";
+import type { Attachment } from "@xmtp/browser-sdk";
 import {
   ArrowUpIcon,
   DocumentIcon,
@@ -18,16 +18,11 @@ import {
 } from "@heroicons/react/outline";
 import { useTranslation } from "react-i18next";
 import { Tooltip } from "react-tooltip";
-import type {
-  CachedConversationWithId,
-  CachedConversation,
-  useStartConversation,
-} from "@xmtp/react-sdk";
+import type { AppDm } from "../../../contexts/XmtpContext";
 import {
-  useSendMessage as _useSendMessage,
-  useConversation,
-} from "@xmtp/react-sdk";
-import { ContentTypeScreenEffect } from "@xmtp/experimental-content-type-screen-effect";
+  ScreenEffectCodec,
+  type EffectType,
+} from "../../../helpers/codecs/ScreenEffectCodec";
 import { IconButton } from "../IconButton/IconButton";
 import { useAttachmentChange } from "../../../hooks/useAttachmentChange";
 import { typeLookup, type contentTypes } from "../../../helpers/attachments";
@@ -41,18 +36,26 @@ import { useLongPress } from "../../../hooks/useLongPress";
 import { EffectDialog } from "../EffectDialog/EffectDialog";
 import useWindowSize from "../../../hooks/useWindowSize";
 
+/**
+ * TODO: re-enable attachments once the remote-attachment send path works on
+ * browser-sdk. Encrypt/upload/send is wired up (encryptAttachment -> w3up ->
+ * sendRemoteAttachment) but does not currently deliver, so the entry points are
+ * hidden rather than offering the user a control that silently fails. Covers
+ * images, video, documents and voice notes — voice notes travel as remote
+ * attachments too. Flip this back to true to restore the pickers.
+ */
+const ATTACHMENTS_ENABLED = false;
+
 type InputProps = {
   /**
    * What happens on a submit?
    */
   sendMessage: (
-    conversation: CachedConversation,
+    conversation: AppDm,
     msg: string | Attachment,
     type: "attachment" | "text",
   ) => Promise<void>;
-  startConversation: ReturnType<
-    typeof useStartConversation
-  >["startConversation"];
+  startConversation: (peerAddress: string) => Promise<AppDm | undefined>;
   peerAddress: RecipientAddress;
   /**
    * Is the CTA button disabled?
@@ -61,7 +64,7 @@ type InputProps = {
   /**
    * Rerender component?
    */
-  conversation?: CachedConversation;
+  conversation?: AppDm;
   /**
    * Content attachment
    */
@@ -98,9 +101,6 @@ export const MessageInput = ({
 }: InputProps) => {
   const [width] = useWindowSize();
 
-  const { getCachedByPeerAddress } = useConversation();
-  // For effects
-  const { sendMessage: _sendMessage } = _useSendMessage();
   const [openEffectDialog, setOpenEffectDialog] = useState(false);
 
   const { t } = useTranslation();
@@ -111,10 +111,10 @@ export const MessageInput = ({
     Dispatch<SetStateAction<string | string[] | undefined>>,
   ] = useState();
   const attachmentError = useXmtpStore((state) => state.attachmentError);
-  const setConversationTopic = useXmtpStore(
-    (state) => state.setConversationTopic,
-  );
-  const conversationTopic = useXmtpStore((state) => state.conversationTopic);
+  const sendError = useXmtpStore((state) => state.sendError);
+  const setSendError = useXmtpStore((state) => state.setSendError);
+  const setConversationId = useXmtpStore((state) => state.setConversationId);
+  const conversationId = useXmtpStore((state) => state.conversationId);
 
   const inputFile = useRef<HTMLInputElement | null>(null);
 
@@ -142,7 +142,7 @@ export const MessageInput = ({
   }, [value]);
 
   useEffect(() => {
-    if (conversationTopic) {
+    if (conversationId) {
       textAreaRef.current?.focus();
     }
     setValue("");
@@ -192,56 +192,76 @@ export const MessageInput = ({
   });
 
   const send = useCallback(async () => {
-    // the peerAddress check is for the type checker only
-    // it's not possible to send a message without a valid peerAddress
-    if (peerAddress && (value || attachment)) {
-      // save reference to these values before clearing them from state
-      const val = value;
-      const attach = attachment;
+    // save reference to these values before clearing them from state
+    const val = value;
+    const attach = attachment;
 
-      setValue("");
-      setAttachment(undefined);
-      setAttachmentPreview(undefined);
+    // Enter on an empty composer is not a refusal, it is a no-op
+    if (!val && !attach) {
+      return;
+    }
 
+    // Previously this was folded into the guard above, so a missing recipient
+    // silently discarded the keystroke — no send, no error, nothing logged.
+    // The recipient can be absent when the selection state is stale, which is
+    // exactly when the user most needs to be told.
+    if (!peerAddress) {
+      setSendError(t("messages.message_no_recipient"));
+      return;
+    }
+
+    setValue("");
+    setAttachment(undefined);
+    setAttachmentPreview(undefined);
+
+    setSendError("");
+
+    try {
       let convo = conversation;
       if (!convo) {
-        // check for cached conversation with the same peer address
-        const existing = await getCachedByPeerAddress(peerAddress);
-        if (existing) {
-          convo = existing;
-        } else {
-          // create new conversation
-          const { cachedConversation } = await startConversation(
-            peerAddress,
-            undefined,
-          );
-          convo = cachedConversation;
-        }
-        // select existing or new conversation
-        if (convo && conversationTopic !== convo.topic) {
-          setConversationTopic(convo.topic);
+        // finds the existing DM with this peer or creates one
+        convo = await startConversation(peerAddress);
+        if (convo && conversationId !== convo.id) {
+          setConversationId(convo.id);
         }
       }
-      if (attach && convo) {
-        void sendMessage(convo, attach, "attachment");
+      if (!convo) {
+        throw new Error("Could not open a conversation with this address");
       }
-      if (val && convo) {
-        void sendMessage(convo, val, "text");
+      if (attach) {
+        await sendMessage(convo, attach, "attachment");
       }
-      // focus on message input after sending
-      textAreaRef.current?.focus();
+      if (val) {
+        await sendMessage(convo, val, "text");
+      }
+    } catch (caught) {
+      // The input was cleared optimistically, so put the message back rather
+      // than losing what the user typed.
+      setValue(val);
+      setAttachment(attach);
+      setSendError(
+        caught instanceof Error && caught.message
+          ? caught.message
+          : t("messages.message_send_failed"),
+      );
     }
+
+    // focus on message input after sending
+    textAreaRef.current?.focus();
+    // focus on message input after sending
+    textAreaRef.current?.focus();
   }, [
     attachment,
     conversation,
-    conversationTopic,
-    getCachedByPeerAddress,
+    conversationId,
     peerAddress,
     sendMessage,
     setAttachment,
     setAttachmentPreview,
-    setConversationTopic,
+    setConversationId,
+    setSendError,
     startConversation,
+    t,
     value,
   ]);
 
@@ -252,15 +272,26 @@ export const MessageInput = ({
     }
   };
 
-  const handleSendEffect = (effectType: string) => {
-    void _sendMessage(
-      conversation as CachedConversationWithId,
-      // We don't need to do anything with the associated message for this effect
-      { messageId: "", effectType },
-      ContentTypeScreenEffect,
-    );
-    void send();
+  const handleSendEffect = (effectType: EffectType) => {
+    const sendEffect = async () => {
+      const convo =
+        conversation ?? (await startConversation(peerAddress ?? ""));
+      if (!convo) {
+        return;
+      }
+      const codec = new ScreenEffectCodec();
+      // Screen effects are the app's one custom content type, so they are
+      // encoded here rather than through a typed send helper. They play over
+      // the conversation instead of appearing in it, so they never push.
+      await convo.send(
+        // the associated message is unused for this effect
+        codec.encode({ messageId: "", effectType }),
+        { shouldPush: false },
+      );
+      await send();
+    };
 
+    void sendEffect();
     setOpenEffectDialog(false);
   };
 
@@ -324,6 +355,13 @@ export const MessageInput = ({
             </div>
           )}
         </div>
+        {sendError ? (
+          <p
+            className="m-0 px-4 pb-2 text-sm text-red-600"
+            data-testid="send-error">
+            {sendError}
+          </p>
+        ) : null}
         {attachmentPreview && (
           <div className="relative m-8 w-fit">
             {typeLookup[extension] === "video" ? (
@@ -373,69 +411,75 @@ export const MessageInput = ({
         )}
         <div className="flex justify-between bg-gray-100 rounded-b-2xl px-2">
           <div className="flex flex-row">
-            <PhotographIcon
-              tabIndex={0}
-              width={24}
-              height={24}
-              className="m-2 cursor-pointer text-gray-400 hover:text-black focus:outline-none focus-visible:ring"
-              onClick={() => onButtonClick("image")}
-              onKeyDown={(e) =>
-                e.key === "Enter" && !e.shiftKey && onButtonClick("image")
-              }
-            />
-            <VideoCameraIcon
-              tabIndex={0}
-              width={26}
-              height={26}
-              className="m-2 cursor-pointer text-gray-400 hover:text-black focus:outline-none focus-visible:ring"
-              onClick={() => onButtonClick("video")}
-              onKeyDown={(e) =>
-                e.key === "Enter" && !e.shiftKey && onButtonClick("video")
-              }
-            />
-            <DocumentIcon
-              tabIndex={0}
-              width={24}
-              height={24}
-              className="m-2 cursor-pointer text-gray-400 hover:text-black focus:outline-none focus-visible:ring"
-              onClick={() => onButtonClick("application")}
-              onKeyDown={(e) =>
-                e.key === "Enter" && !e.shiftKey && onButtonClick("application")
-              }
-            />
-            {status !== "recording" ? (
+            {ATTACHMENTS_ENABLED ? (
               <>
-                <MicrophoneIcon
-                  data-tooltip-id="mic"
+                <PhotographIcon
                   tabIndex={0}
                   width={24}
                   height={24}
                   className="m-2 cursor-pointer text-gray-400 hover:text-black focus:outline-none focus-visible:ring"
-                  onClick={() => {
-                    startRecording();
-                    start();
-                  }}
+                  onClick={() => onButtonClick("image")}
+                  onKeyDown={(e) =>
+                    e.key === "Enter" && !e.shiftKey && onButtonClick("image")
+                  }
                 />
-                {error === "permission_denied" ? (
-                  <Tooltip id="mic">
-                    {t("status_messaging.microphone_not_enabled")}
-                  </Tooltip>
-                ) : null}
+                <VideoCameraIcon
+                  tabIndex={0}
+                  width={26}
+                  height={26}
+                  className="m-2 cursor-pointer text-gray-400 hover:text-black focus:outline-none focus-visible:ring"
+                  onClick={() => onButtonClick("video")}
+                  onKeyDown={(e) =>
+                    e.key === "Enter" && !e.shiftKey && onButtonClick("video")
+                  }
+                />
+                <DocumentIcon
+                  tabIndex={0}
+                  width={24}
+                  height={24}
+                  className="m-2 cursor-pointer text-gray-400 hover:text-black focus:outline-none focus-visible:ring"
+                  onClick={() => onButtonClick("application")}
+                  onKeyDown={(e) =>
+                    e.key === "Enter" &&
+                    !e.shiftKey &&
+                    onButtonClick("application")
+                  }
+                />
+                {status !== "recording" ? (
+                  <>
+                    <MicrophoneIcon
+                      data-tooltip-id="mic"
+                      tabIndex={0}
+                      width={24}
+                      height={24}
+                      className="m-2 cursor-pointer text-gray-400 hover:text-black focus:outline-none focus-visible:ring"
+                      onClick={() => {
+                        startRecording();
+                        start();
+                      }}
+                    />
+                    {error === "permission_denied" ? (
+                      <Tooltip id="mic">
+                        {t("status_messaging.microphone_not_enabled")}
+                      </Tooltip>
+                    ) : null}
+                  </>
+                ) : (
+                  <StopIcon
+                    tabIndex={0}
+                    id="mic"
+                    width={24}
+                    height={24}
+                    className="m-2 cursor-pointer text-gray-400 hover:text-black focus:outline-none focus-visible:ring"
+                    onClick={() => {
+                      stopRecording();
+                      pause();
+                      reset();
+                    }}
+                  />
+                )}
               </>
-            ) : (
-              <StopIcon
-                tabIndex={0}
-                id="mic"
-                width={24}
-                height={24}
-                className="m-2 cursor-pointer text-gray-400 hover:text-black focus:outline-none focus-visible:ring"
-                onClick={() => {
-                  stopRecording();
-                  pause();
-                  reset();
-                }}
-              />
-            )}
+            ) : null}
           </div>
           <div className="flex items-center" {...longPressEvents}>
             <IconButton

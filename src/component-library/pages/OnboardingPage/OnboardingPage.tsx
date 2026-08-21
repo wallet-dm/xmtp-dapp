@@ -16,7 +16,6 @@ export const OnboardingPage = ({
       isLoading={isLoading}
       onConnect={() => {}}
       onCreate={() => {}}
-      onEnable={() => {}}
       onDisconnect={() => {}}
     />
   </div>

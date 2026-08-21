@@ -1,16 +1,15 @@
-import { ContentTypeRemoteAttachment } from "@xmtp/content-type-remote-attachment";
-import type { CachedMessageWithId } from "@xmtp/react-sdk";
-import { ContentTypeId, ContentTypeText } from "@xmtp/react-sdk";
-import { ContentTypeScreenEffect } from "@xmtp/experimental-content-type-screen-effect";
+import { isRemoteAttachment, isText } from "@xmtp/browser-sdk";
+import { contentTypesAreEqual } from "@xmtp/content-type-primitives";
+import type { AppMessage } from "../contexts/XmtpContext";
+import { ContentTypeScreenEffect } from "./codecs/ScreenEffectCodec";
 
 /**
- * Determines if a message is supported by the app
+ * Determines if a message is supported by the app.
+ *
+ * Dispatch is on the SDK's type guards rather than content-type ids, since
+ * browser-sdk decodes built-in types in the WASM bindings.
  */
-export const isMessageSupported = (message: CachedMessageWithId) => {
-  const contentType = ContentTypeId.fromString(message.contentType);
-  return (
-    contentType.sameAs(ContentTypeText) ||
-    contentType.sameAs(ContentTypeRemoteAttachment) ||
-    contentType.sameAs(ContentTypeScreenEffect)
-  );
-};
+export const isMessageSupported = (message: AppMessage) =>
+  isText(message) ||
+  isRemoteAttachment(message) ||
+  contentTypesAreEqual(message.contentType, ContentTypeScreenEffect);

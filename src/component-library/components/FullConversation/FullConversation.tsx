@@ -2,7 +2,8 @@ import { useTranslation } from "react-i18next";
 import type { VirtuosoHandle } from "react-virtuoso";
 import { Virtuoso } from "react-virtuoso";
 import { useMemo, useRef, useState } from "react";
-import { useConsent } from "@xmtp/react-sdk";
+import type { AppDm } from "../../../contexts/XmtpContext";
+import useConsent from "../../../hooks/useConsent";
 import { useXmtpStore } from "../../../store/xmtp";
 import { AddressInputController } from "../../../controllers/AddressInputController";
 
@@ -10,6 +11,8 @@ interface FullConversationProps {
   messages?: Array<JSX.Element | null>;
   isLoading?: boolean;
   address: string;
+  conversation?: AppDm;
+  peerInboxId?: string;
 }
 
 const LoadingMessage: React.FC = () => {
@@ -32,14 +35,18 @@ const BeginningMessage: React.FC = () => {
   );
 };
 
-const AcceptOrDeny = ({ address }: { address: string }) => {
+const AcceptOrDeny = ({
+  conversation,
+  peerInboxId,
+}: {
+  conversation?: AppDm;
+  peerInboxId?: string;
+}) => {
   const { t } = useTranslation();
   const { allow, deny } = useConsent();
   const activeTab = useXmtpStore((s) => s.activeTab);
-  const changedConsentCount = useXmtpStore((s) => s.changedConsentCount);
-  const setChangedConsentCount = useXmtpStore((s) => s.setChangedConsentCount);
   const setActiveTab = useXmtpStore((s) => s.setActiveTab);
-  const setConversationTopic = useXmtpStore((s) => s.setConversationTopic);
+  const setConversationId = useXmtpStore((s) => s.setConversationId);
   const resetRecipient = useXmtpStore((s) => s.resetRecipient);
 
   const [modalOpen, setModalOpen] = useState(true);
@@ -55,9 +62,8 @@ const AcceptOrDeny = ({ address }: { address: string }) => {
           type="button"
           className="text-indigo-600 flex w-full justify-center border border-2 border-indigo-600 rounded-md p-2 hover:bg-indigo-600 hover:text-white"
           onClick={() => {
-            void allow([address]);
+            void allow({ conversation, peerInboxId });
             setModalOpen(false);
-            setChangedConsentCount(changedConsentCount + 1);
             setActiveTab("messages");
           }}>
           {t("consent.accept")}
@@ -66,12 +72,11 @@ const AcceptOrDeny = ({ address }: { address: string }) => {
           type="button"
           className="text-red-600 flex w-full justify-center border border-2 border-red-600 rounded-md p-2 hover:bg-red-600 hover:text-white"
           onClick={() => {
-            void deny([address]);
+            void deny({ conversation, peerInboxId });
             setModalOpen(false);
             setActiveTab("requests");
             resetRecipient();
-            setConversationTopic("");
-            setChangedConsentCount(changedConsentCount + 1);
+            setConversationId("");
           }}>
           {t("consent.block")}
         </button>
@@ -84,6 +89,8 @@ export const FullConversation = ({
   messages = [],
   isLoading = false,
   address,
+  conversation,
+  peerInboxId,
 }: FullConversationProps) => {
   const virtuosoRef = useRef<VirtuosoHandle>(null);
   const filteredMessages = useMemo(() => {
@@ -96,9 +103,13 @@ export const FullConversation = ({
         <BeginningMessage key="beginning" />
       ),
       ...filtered,
-      <AcceptOrDeny key={address} address={address} />,
+      <AcceptOrDeny
+        key={conversation?.id ?? address}
+        conversation={conversation}
+        peerInboxId={peerInboxId}
+      />,
     ];
-  }, [isLoading, messages, address]);
+  }, [isLoading, messages, address, conversation, peerInboxId]);
 
   return (
     <Virtuoso
