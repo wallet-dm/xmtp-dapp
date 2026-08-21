@@ -1,13 +1,14 @@
 import { ClipboardCopyIcon } from "@heroicons/react/outline";
-import { useClient } from "@xmtp/react-sdk";
+import useXmtpClient from "../../../hooks/useXmtpClient";
 import { useTranslation } from "react-i18next";
 import { QRCode } from "react-qrcode-logo";
 import type { ETHAddress } from "../../../helpers";
 
 export const EmptyRequest = () => {
   const { t } = useTranslation();
-  const { client } = useClient();
-  const walletAddress = (client?.address as ETHAddress | undefined) ?? "";
+  const { client } = useXmtpClient();
+  const walletAddress =
+    (client?.accountIdentifier?.identifier as ETHAddress | undefined) ?? "";
 
   return (
     <div className="flex flex-col justify-center items-center h-full text-center">

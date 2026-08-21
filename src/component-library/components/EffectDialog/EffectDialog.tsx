@@ -1,4 +1,4 @@
-import type { EffectType } from "@xmtp/experimental-content-type-screen-effect";
+import type { EffectType } from "../../../helpers/codecs/ScreenEffectCodec";
 
 export const EffectDialog = ({
   handleSendEffect,

@@ -1,9 +1,12 @@
-import { useConsent, useConversation } from "@xmtp/react-sdk";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { AddressInput } from "../component-library/components/AddressInput/AddressInput";
 import { getRecipientInputSubtext, shortAddress } from "../helpers";
 import { useAddressInput } from "../hooks/useAddressInput";
+import useConsent from "../hooks/useConsent";
 import useWindowSize from "../hooks/useWindowSize";
+import useXmtpClient from "../hooks/useXmtpClient";
+import { resolveInboxId } from "../helpers/inboxIdentity";
+import type { AppDm } from "../contexts/XmtpContext";
 import { useXmtpStore } from "../store/xmtp";
 
 export const AddressInputController = () => {
@@ -14,19 +17,23 @@ export const AddressInputController = () => {
   const recipientOnNetwork = useXmtpStore((s) => s.recipientOnNetwork);
   const recipientInput = useXmtpStore((s) => s.recipientInput);
   const recipientName = useXmtpStore((s) => s.recipientName);
-  const conversationTopic = useXmtpStore((s) => s.conversationTopic);
+  const conversationId = useXmtpStore((s) => s.conversationId);
   const resetRecipient = useXmtpStore((s) => s.resetRecipient);
   const loadingConversations = useXmtpStore((s) => s.loadingConversations);
   const setRecipientInput = useXmtpStore((s) => s.setRecipientInput);
   const setStartedFirstMessage = useXmtpStore((s) => s.setStartedFirstMessage);
-  const setConversationTopic = useXmtpStore((s) => s.setConversationTopic);
-  const changedConsentCount = useXmtpStore((s) => s.changedConsentCount);
-  const setChangedConsentCount = useXmtpStore((s) => s.setChangedConsentCount);
+  const setConversationId = useXmtpStore((s) => s.setConversationId);
   const activeTab = useXmtpStore((s) => s.activeTab);
   const setActiveTab = useXmtpStore((s) => s.setActiveTab);
 
-  const { getCachedByPeerAddress, getCachedByTopic } = useConversation();
+  const { client } = useXmtpClient();
   const { deny, allow } = useConsent();
+  // held so the block/unblock button can act on the peer's inbox as well as
+  // the conversation
+  const [selected, setSelected] = useState<{
+    conversation?: AppDm;
+    peerInboxId?: string;
+  }>({});
 
   // manage address input state
   useAddressInput();
@@ -34,38 +41,46 @@ export const AddressInputController = () => {
   const size = useWindowSize();
 
   useEffect(() => {
+    let cancelled = false;
+
     const selectConversation = async () => {
-      // if there's a valid network address, look for an existing conversation
-      if (recipientAddress && recipientOnNetwork) {
-        let updateSelectedConversation = true;
-        // if there's an existing conversation topic, check if it has the same
-        // peer address as the recipient
-        if (conversationTopic) {
-          const convo = await getCachedByTopic(conversationTopic);
-          // if the peer address is the same, do not attempt to update the
-          // select conversation
-          if (convo?.peerAddress === recipientAddress) {
-            updateSelectedConversation = false;
-          }
-        }
-        // if we're updated the selected conversation, look for a conversation
-        // with the recipient's address. if present, select that conversation.
-        if (updateSelectedConversation) {
-          const existing = await getCachedByPeerAddress(recipientAddress);
-          if (existing && conversationTopic !== existing.topic) {
-            setConversationTopic(existing.topic);
-          }
-        }
+      if (!recipientAddress || !recipientOnNetwork || !client) {
+        setSelected({});
+        return;
+      }
+
+      const peerInboxId = await resolveInboxId(client, recipientAddress);
+      if (cancelled || !peerInboxId) {
+        return;
+      }
+
+      // Look up the existing DM without creating one — typing an address
+      // should not put a conversation on the network.
+      const existing = (await client.conversations.getDmByInboxId(
+        peerInboxId,
+      )) as AppDm | undefined;
+      if (cancelled) {
+        return;
+      }
+
+      setSelected({ conversation: existing, peerInboxId });
+
+      if (existing && conversationId !== existing.id) {
+        setConversationId(existing.id);
       }
     };
+
     void selectConversation();
+
+    return () => {
+      cancelled = true;
+    };
   }, [
-    conversationTopic,
-    getCachedByPeerAddress,
-    getCachedByTopic,
+    client,
+    conversationId,
     recipientAddress,
     recipientOnNetwork,
-    setConversationTopic,
+    setConversationId,
   ]);
 
   return (
@@ -104,17 +119,15 @@ export const AddressInputController = () => {
       onLeftIconClick={() => {
         resetRecipient();
         setStartedFirstMessage(false);
-        setConversationTopic("");
+        setConversationId("");
       }}
       onRightIconClick={() => {
         if (activeTab === "messages") {
-          void deny([recipientAddress as string]);
+          void deny(selected);
           setActiveTab("blocked");
-          setChangedConsentCount(changedConsentCount + 1);
         } else if (activeTab === "blocked") {
-          void allow([recipientAddress as string]);
+          void allow(selected);
           setActiveTab("messages");
-          setChangedConsentCount(changedConsentCount + 1);
         }
       }}
       activeTab={activeTab}

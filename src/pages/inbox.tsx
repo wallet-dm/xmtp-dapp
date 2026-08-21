@@ -1,17 +1,11 @@
 import type React from "react";
 import { useEffect, useState } from "react";
-import {
-  useConsent,
-  useClient,
-  useConversations,
-  useStreamConversations,
-} from "@xmtp/react-sdk";
 import { useDisconnect, useWalletClient } from "wagmi";
-import type { Attachment } from "@xmtp/content-type-remote-attachment";
+import type { Attachment } from "@xmtp/browser-sdk";
 import { useNavigate } from "react-router-dom";
 import { XIcon } from "@heroicons/react/outline";
 import { useXmtpStore } from "../store/xmtp";
-import { TAILWIND_MD_BREAKPOINT, wipeKeys } from "../helpers";
+import { TAILWIND_MD_BREAKPOINT } from "../helpers";
 import { FullConversationController } from "../controllers/FullConversationController";
 import { AddressInputController } from "../controllers/AddressInputController";
 import { HeaderDropdownController } from "../controllers/HeaderDropdownController";
@@ -23,28 +17,26 @@ import { ConversationListController } from "../controllers/ConversationListContr
 import { useAttachmentChange } from "../hooks/useAttachmentChange";
 import useSelectedConversation from "../hooks/useSelectedConversation";
 import { ReplyThread } from "../component-library/components/ReplyThread/ReplyThread";
+import useXmtpClient from "../hooks/useXmtpClient";
 
 const Inbox: React.FC<{ children?: React.ReactNode }> = () => {
   const navigate = useNavigate();
   const resetXmtpState = useXmtpStore((state) => state.resetXmtpState);
   const activeMessage = useXmtpStore((state) => state.activeMessage);
-  const conversationTopic = useXmtpStore((state) => state.conversationTopic);
+  const conversationId = useXmtpStore((state) => state.conversationId);
 
-  const { client, disconnect } = useClient();
+  const { client, disconnect } = useXmtpClient();
   const [isDragActive, setIsDragActive] = useState(false);
-  const { conversations } = useConversations();
   const selectedConversation = useSelectedConversation();
   const { data: walletClient } = useWalletClient();
-  useStreamConversations();
-
-  const { loadConsentList } = useConsent();
+  // Conversations are listed and streamed by ConversationListController; the
+  // inbox only needs to know whether any exist, so it reads the store rather
+  // than mounting a second copy of that hook.
+  const hasConversations = useXmtpStore((state) => state.hasConversations);
 
   useEffect(() => {
     if (!client) {
       navigate("/");
-    } else {
-      // make sure there's a client before loading the consent list
-      void loadConsentList();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [client]);
@@ -87,12 +79,14 @@ const Inbox: React.FC<{ children?: React.ReactNode }> = () => {
   useEffect(() => {
     const checkSigners = () => {
       const address1 = walletClient?.account.address;
-      const address2 = client?.address;
+      const address2 = client?.accountIdentifier?.identifier;
       // addresses must be defined before comparing
-      if (address1 && address2 && address1 !== address2) {
+      if (address1 && address2 && address1.toLowerCase() !== address2) {
         resetXmtpState();
+        // Each inbox gets its own database (xmtp-<env>-<inboxId>.db3), so
+        // switching wallets needs no wipe — and wiping would cost the previous
+        // wallet its installation and history.
         void disconnect();
-        wipeKeys(address1 ?? "");
         disconnectWagmi();
         resetWagmi();
       }
@@ -102,7 +96,7 @@ const Inbox: React.FC<{ children?: React.ReactNode }> = () => {
     disconnect,
     resetXmtpState,
     walletClient,
-    client?.address,
+    client,
     resetWagmi,
     disconnectWagmi,
   ]);
@@ -114,6 +108,12 @@ const Inbox: React.FC<{ children?: React.ReactNode }> = () => {
   const visible =
     size[0] > TAILWIND_MD_BREAKPOINT ||
     (!recipientAddress && !startedFirstMessage);
+
+  // TODO: re-enable alongside the attachment pickers in MessageInput once the
+  // remote-attachment send path works on browser-sdk. Dropping a file is the
+  // other way into that path, so it is disabled here too rather than accepting
+  // a file and failing silently.
+  const ATTACHMENT_DROP_ENABLED = false;
 
   const handleDrag = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
@@ -128,10 +128,10 @@ const Inbox: React.FC<{ children?: React.ReactNode }> = () => {
     // Controller for drag-and-drop area
     <div
       className={isDragActive ? "bg-slate-100" : "bg-white"}
-      onDragOver={handleDrag}
-      onDragEnter={handleDrag}
-      onDragLeave={handleDrag}
-      onDrop={onAttachmentChange}>
+      onDragOver={ATTACHMENT_DROP_ENABLED ? handleDrag : undefined}
+      onDragEnter={ATTACHMENT_DROP_ENABLED ? handleDrag : undefined}
+      onDragLeave={ATTACHMENT_DROP_ENABLED ? handleDrag : undefined}
+      onDrop={ATTACHMENT_DROP_ENABLED ? onAttachmentChange : undefined}>
       <div className="w-full md:h-full overflow-auto flex flex-col md:flex-row">
         <div className="flex">
           <div style={visible ? { display: "flex" } : { display: "none" }}>
@@ -150,7 +150,7 @@ const Inbox: React.FC<{ children?: React.ReactNode }> = () => {
         recipientAddress ||
         startedFirstMessage ? (
           <div className="flex w-full flex-col h-dvh overflow-hidden">
-            {!conversations.length &&
+            {!hasConversations &&
             !loadingConversations &&
             !startedFirstMessage ? (
               <LearnMore
@@ -174,7 +174,7 @@ const Inbox: React.FC<{ children?: React.ReactNode }> = () => {
                     </div>
                   ) : (
                     <>
-                      {!conversationTopic && activeTab === "messages" && (
+                      {!conversationId && activeTab === "messages" && (
                         <div className="flex">
                           <AddressInputController />
                         </div>

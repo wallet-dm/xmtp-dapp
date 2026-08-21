@@ -11,9 +11,13 @@ interface ErrorProps {
    * What function should be run to connect to a wallet?
    */
   onConnect?: () => void;
+  /**
+   * Underlying failure detail, shown verbatim so a user can report it
+   */
+  details?: string;
 }
 
-export const Error = ({ errorText, onConnect }: ErrorProps) => {
+export const Error = ({ errorText, onConnect, details }: ErrorProps) => {
   const { t } = useTranslation();
 
   return (
@@ -26,6 +30,13 @@ export const Error = ({ errorText, onConnect }: ErrorProps) => {
         <p>
           <Trans i18nKey={errorText || "status_messaging.error_1_subheader"} />
         </p>
+        {details ? (
+          <p
+            className="mt-3 break-words rounded-lg bg-gray-100 p-3 text-left text-xs text-gray-700"
+            data-testid="error-details">
+            {details}
+          </p>
+        ) : null}
         <div className="p-2">
           <PillButton
             variant="secondary"

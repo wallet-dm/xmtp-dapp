@@ -1,5 +1,4 @@
 import { useEffect } from "react";
-import { useCanMessage } from "@xmtp/react-sdk";
 import debounce from "lodash/debounce";
 import {
   isEnsName,
@@ -11,7 +10,9 @@ import {
   throttledFetchUnsAddress,
   throttledFetchUnsName,
 } from "../helpers";
+import { toEthIdentifier } from "../helpers/inboxIdentity";
 import { useXmtpStore } from "../store/xmtp";
+import useXmtpClient from "./useXmtpClient";
 
 /**
  * Hook to manage the state of the recipient address input
@@ -19,7 +20,7 @@ import { useXmtpStore } from "../store/xmtp";
  * DO NOT RENDER THIS HOOK MORE THAN ONCE
  */
 export const useAddressInput = () => {
-  const { canMessage } = useCanMessage();
+  const { client } = useXmtpClient();
   const recipientInput = useXmtpStore((s) => s.recipientInput);
   const recipientAddress = useXmtpStore((s) => s.recipientAddress);
   const recipientName = useXmtpStore((s) => s.recipientName);
@@ -74,15 +75,15 @@ export const useAddressInput = () => {
           console.error(e);
         }
         try {
-          // make sure we can message the recipient
-          if (!recipientOnNetwork) {
+          // make sure the recipient has an XMTP inbox
+          if (!recipientOnNetwork && client) {
             setRecipientState("loading");
-            const validRecipient = await canMessage(recipientAddress);
-            if (validRecipient) {
-              setRecipientOnNetwork(true);
-            } else {
-              setRecipientOnNetwork(false);
-            }
+            const identifier = toEthIdentifier(recipientAddress);
+            const reachable = await client.canMessage([identifier]);
+            // the map is keyed by the exact string that was passed in
+            setRecipientOnNetwork(
+              reachable.get(identifier.identifier) ?? false,
+            );
           }
         } catch (e) {
           console.error(e);

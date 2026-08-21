@@ -1,31 +1,25 @@
 import {
-  useLastMessage,
-  type CachedConversation,
-  ContentTypeId,
-  ContentTypeText,
-  useConsent,
-} from "@xmtp/react-sdk";
+  ConsentState,
+  isAttachment,
+  isRemoteAttachment,
+  isReply,
+  isText,
+} from "@xmtp/browser-sdk";
+import type { EnrichedReply } from "@xmtp/browser-sdk";
+import { contentTypesAreEqual } from "@xmtp/content-type-primitives";
 import { useCallback, useMemo } from "react";
 import { useTranslation } from "react-i18next";
-import { ContentTypeReply, type Reply } from "@xmtp/content-type-reply";
-import type { Attachment } from "@xmtp/content-type-remote-attachment";
-import {
-  ContentTypeAttachment,
-  ContentTypeRemoteAttachment,
-} from "@xmtp/content-type-remote-attachment";
-import { ContentTypeScreenEffect } from "@xmtp/experimental-content-type-screen-effect";
 import { MessagePreviewCard } from "../component-library/components/MessagePreviewCard/MessagePreviewCard";
+import { ContentTypeScreenEffect } from "../helpers/codecs/ScreenEffectCodec";
 import type { ETHAddress } from "../helpers";
 import { shortAddress } from "../helpers";
+import type { ConversationSummary } from "../hooks/useConversations";
+import { usePeerAvatar, usePeerName } from "../store/identity";
 import type { ActiveTab } from "../store/xmtp";
 import { useXmtpStore } from "../store/xmtp";
-import {
-  getCachedPeerAddressAvatar,
-  getCachedPeerAddressName,
-} from "../helpers/conversation";
 
 interface MessagePreviewCardControllerProps {
-  convo: CachedConversation;
+  convo: ConversationSummary;
   tab: ActiveTab;
 }
 
@@ -35,11 +29,12 @@ export const MessagePreviewCardController = ({
   tab,
 }: MessagePreviewCardControllerProps) => {
   const { t } = useTranslation();
-  const { allow } = useConsent();
-  const lastMessage = useLastMessage(convo.topic);
+  const { conversation, lastMessage, peerAddress } = convo;
+
   // XMTP State
   const recipientAddress = useXmtpStore((s) => s.recipientAddress);
   const activeTab = useXmtpStore((s) => s.activeTab);
+  const conversationId = useXmtpStore((state) => state.conversationId);
 
   const setRecipientInput = useXmtpStore((s) => s.setRecipientInput);
   const setRecipientAddress = useXmtpStore((s) => s.setRecipientAddress);
@@ -47,105 +42,96 @@ export const MessagePreviewCardController = ({
   const setRecipientAvatar = useXmtpStore((s) => s.setRecipientAvatar);
   const setRecipientState = useXmtpStore((s) => s.setRecipientState);
   const setRecipientOnNetwork = useXmtpStore((s) => s.setRecipientOnNetwork);
-  const setConversationTopic = useXmtpStore((s) => s.setConversationTopic);
+  const setConversationId = useXmtpStore((s) => s.setConversationId);
   const setActiveMessage = useXmtpStore((s) => s.setActiveMessage);
   const setActiveTab = useXmtpStore((s) => s.setActiveTab);
 
-  const conversationTopic = useXmtpStore((state) => state.conversationTopic);
+  const peerName = usePeerName(peerAddress);
+  const peerAvatar = usePeerAvatar(peerAddress);
 
-  // Helpers
-  const isSelected = conversationTopic === convo.topic;
+  const isSelected = conversationId === convo.id;
 
-  const onConvoClick = useCallback(
-    (conversation: CachedConversation) => {
-      if (recipientAddress !== conversation.peerAddress) {
-        const peerAddress = conversation.peerAddress as ETHAddress;
-        const avatar = getCachedPeerAddressAvatar(conversation);
-        setRecipientAvatar(avatar);
-        const name = getCachedPeerAddressName(conversation);
-        setRecipientName(name);
-        setRecipientAddress(peerAddress);
-        setRecipientOnNetwork(true);
-        setRecipientState("valid");
-        setRecipientInput(peerAddress);
-      }
-      if (conversationTopic !== conversation.topic) {
-        setConversationTopic(conversation.topic);
-        setActiveMessage();
-      }
-    },
-    [
-      conversationTopic,
-      recipientAddress,
-      setConversationTopic,
-      setRecipientAddress,
-      setRecipientAvatar,
-      setRecipientInput,
-      setRecipientName,
-      setRecipientOnNetwork,
-      setRecipientState,
-      setActiveMessage,
-    ],
-  );
-
-  const conversationDomain = convo?.context?.conversationId.split("/")[0] ?? "";
+  const onConvoClick = useCallback(() => {
+    if (peerAddress && recipientAddress !== peerAddress) {
+      setRecipientAvatar(peerAvatar);
+      setRecipientName(peerName);
+      setRecipientAddress(peerAddress as ETHAddress);
+      setRecipientOnNetwork(true);
+      setRecipientState("valid");
+      setRecipientInput(peerAddress);
+    }
+    if (conversationId !== convo.id) {
+      setConversationId(convo.id);
+      setActiveMessage();
+    }
+  }, [
+    convo.id,
+    conversationId,
+    peerAddress,
+    peerAvatar,
+    peerName,
+    recipientAddress,
+    setActiveMessage,
+    setConversationId,
+    setRecipientAddress,
+    setRecipientAvatar,
+    setRecipientInput,
+    setRecipientName,
+    setRecipientOnNetwork,
+    setRecipientState,
+  ]);
 
   const messagePreview = useMemo(() => {
-    if (lastMessage) {
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-      let previewContent = lastMessage.content;
-      let previewContentType = ContentTypeId.fromString(
-        lastMessage.contentType,
-      );
-
-      if (ContentTypeScreenEffect.sameAs(previewContentType)) {
-        return undefined;
-      }
-
-      if (ContentTypeReply.sameAs(previewContentType)) {
-        const reply = lastMessage.content as Reply;
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-        previewContent = reply.content;
-        previewContentType = reply.contentType;
-      }
-
-      if (ContentTypeText.sameAs(previewContentType)) {
-        return (previewContent as string) ?? lastMessage.contentFallback;
-      }
-
-      if (
-        ContentTypeAttachment.sameAs(previewContentType) ||
-        ContentTypeRemoteAttachment.sameAs(previewContentType)
-      ) {
-        return (
-          (previewContent as Attachment).filename ??
-          (t("messages.attachment") || "Attachment")
-        );
-      }
-
-      return lastMessage.contentFallback ?? t("messages.no_preview");
+    if (!lastMessage) {
+      return t("messages.no_preview");
     }
-    return t("messages.no_preview");
+
+    // screen effects play over the conversation; they are not previewable
+    if (
+      contentTypesAreEqual(lastMessage.contentType, ContentTypeScreenEffect)
+    ) {
+      return undefined;
+    }
+
+    if (isText(lastMessage)) {
+      return lastMessage.content;
+    }
+
+    // A reply previews as whatever it is replying with. The type guard narrows
+    // to an intersection the compiler will not read `content` off directly, so
+    // the reply shape is named explicitly.
+    if (isReply(lastMessage)) {
+      const replied = (lastMessage.content as EnrichedReply | undefined)
+        ?.content;
+      return typeof replied === "string"
+        ? replied
+        : t("messages.attachment") ?? "Attachment";
+    }
+
+    if (isAttachment(lastMessage) || isRemoteAttachment(lastMessage)) {
+      const attachment = lastMessage.content as
+        | { filename?: string }
+        | undefined;
+      return attachment?.filename ?? t("messages.attachment");
+    }
+
+    return lastMessage.fallback ?? t("messages.no_preview");
   }, [lastMessage, t]);
+
+  const allow = useCallback(async () => {
+    await conversation.updateConsentState(ConsentState.Allowed);
+  }, [conversation]);
 
   return (
     <MessagePreviewCard
       isSelected={isSelected}
-      key={lastMessage?.xmtpID}
+      key={lastMessage?.id}
       text={messagePreview}
-      datetime={convo?.updatedAt}
-      displayAddress={
-        getCachedPeerAddressName(convo) ??
-        shortAddress(convo?.peerAddress || "")
-      }
-      onClick={() => {
-        if (convo) {
-          void onConvoClick?.(convo);
-        }
-      }}
-      avatarUrl={getCachedPeerAddressAvatar(convo) || ""}
-      conversationDomain={shortAddress(conversationDomain)}
-      address={convo?.peerAddress}
+      datetime={convo.lastActivity}
+      displayAddress={peerName ?? shortAddress(peerAddress ?? "")}
+      onClick={onConvoClick}
+      avatarUrl={peerAvatar || ""}
+      address={peerAddress ?? ""}
       activeTab={activeTab}
       setActiveTab={setActiveTab}
       allow={allow}

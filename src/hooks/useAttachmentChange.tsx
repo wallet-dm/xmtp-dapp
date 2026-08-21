@@ -1,6 +1,6 @@
 import type { ChangeEvent } from "react";
 import { useCallback } from "react";
-import type { Attachment } from "@xmtp/content-type-remote-attachment";
+import type { Attachment } from "@xmtp/browser-sdk";
 import { useTranslation } from "react-i18next";
 import { useXmtpStore } from "../store/xmtp";
 import { MAX_FILE_SIZE } from "../helpers";
@@ -51,7 +51,7 @@ export const useAttachmentChange = ({
             const attachment: Attachment = {
               filename: file.name,
               mimeType: file.type,
-              data: new Uint8Array(data),
+              content: new Uint8Array(data),
             };
 
             setAttachmentPreview(

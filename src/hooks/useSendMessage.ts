@@ -1,117 +1,106 @@
 import { useCallback } from "react";
-import type { CachedConversation, CachedMessageWithId } from "@xmtp/react-sdk";
 import {
-  ContentTypeText,
-  useSendMessage as _useSendMessage,
-} from "@xmtp/react-sdk";
-import type {
-  Attachment,
-  RemoteAttachment,
-} from "@xmtp/content-type-remote-attachment";
-import {
-  ContentTypeRemoteAttachment,
-  RemoteAttachmentCodec,
-  AttachmentCodec,
-} from "@xmtp/content-type-remote-attachment";
-import { ContentTypeReply } from "@xmtp/content-type-reply";
-import type { Reply } from "@xmtp/content-type-reply";
+  encodeRemoteAttachment,
+  encodeText,
+  encryptAttachment,
+} from "@xmtp/browser-sdk";
+import type { Attachment, RemoteAttachment } from "@xmtp/browser-sdk";
 import * as Client from "@web3-storage/w3up-client";
 import * as Signer from "@ucanto/principal/ed25519";
 import Upload from "../helpers/classes/Upload";
+import type { AppDm, AppMessage } from "../contexts/XmtpContext";
 import { useXmtpStore } from "../store/xmtp";
 import { parseProof } from "../helpers/attachments";
 
+/**
+ * Uploads the encrypted bytes to web3.storage and returns the pointer that
+ * travels over XMTP. Only ciphertext leaves the browser — the key material
+ * stays in the message.
+ */
+const uploadEncryptedAttachment = async (
+  attachment: Attachment,
+): Promise<RemoteAttachment> => {
+  const principal = Signer.parse(import.meta.env.VITE_KEY);
+  const client = await Client.create({ principal });
+
+  const proof = await parseProof(import.meta.env.VITE_PROOF);
+  const space = await client.addSpace(proof);
+  await client.setCurrentSpace(space.did());
+
+  const encrypted = await encryptAttachment(attachment);
+
+  const cid = await client.uploadFile(
+    new Upload("XMTPEncryptedContent", encrypted.payload),
+  );
+
+  return {
+    url: `https://w3s.link/ipfs/${cid.toString()}`,
+    contentDigest: encrypted.contentDigest,
+    secret: encrypted.secret,
+    salt: encrypted.salt,
+    nonce: encrypted.nonce,
+    scheme: "https://",
+    contentLength: attachment.content.byteLength,
+    filename: attachment.filename,
+  };
+};
+
 const useSendMessage = (
   attachment?: Attachment,
-  activeMessage?: CachedMessageWithId | undefined,
+  activeMessage?: AppMessage | undefined,
 ) => {
-  const { sendMessage: _sendMessage, isLoading, error } = _useSendMessage();
   const recipientOnNetwork = useXmtpStore((s) => s.recipientOnNetwork);
 
   const sendMessage = useCallback(
     async (
-      conversation: CachedConversation,
+      conversation: AppDm,
       message: string | Attachment,
       type: "text" | "attachment",
     ) => {
+      // Returning quietly here would drop the message with no feedback at all,
+      // which is indistinguishable from a send that worked.
       if (!recipientOnNetwork) {
-        return;
+        throw new Error(
+          "This address is not reachable on the XMTP network yet.",
+        );
       }
+
+      // A reply carries its parent's id; everything else is sent directly.
+      // Reply payloads are EncodedContent, so they go through the async
+      // encoders rather than the typed send helpers.
+      const replyTo = activeMessage
+        ? {
+            reference: activeMessage.id,
+            referenceInboxId: activeMessage.senderInboxId,
+          }
+        : undefined;
+
       if (attachment && type === "attachment") {
-        const principal = Signer.parse(import.meta.env.VITE_KEY);
-        const client = await Client.create({ principal });
+        const remoteAttachment = await uploadEncryptedAttachment(attachment);
 
-        const proof = await parseProof(import.meta.env.VITE_PROOF);
-        const space = await client.addSpace(proof);
-
-        await client.setCurrentSpace(space.did());
-
-        const encryptedEncoded = await RemoteAttachmentCodec.encodeEncrypted(
-          attachment,
-          new AttachmentCodec(),
-        );
-
-        const upload = new Upload(
-          "XMTPEncryptedContent",
-          encryptedEncoded.payload,
-        );
-
-        const cid = await client.uploadFile(upload);
-        const cidToString = cid.toString();
-
-        const url = `https://w3s.link/ipfs/${cidToString}`;
-        const remoteAttachment: RemoteAttachment = {
-          url,
-          contentDigest: encryptedEncoded.digest,
-          salt: encryptedEncoded.salt,
-          nonce: encryptedEncoded.nonce,
-          secret: encryptedEncoded.secret,
-          scheme: "https://",
-          filename: attachment.filename,
-          contentLength: attachment.data.byteLength,
-        };
-
-        if (activeMessage?.xmtpID) {
-          void _sendMessage(
-            conversation,
-            {
-              reference: activeMessage.xmtpID,
-              content: remoteAttachment,
-              contentType: ContentTypeRemoteAttachment,
-            } satisfies Reply,
-            ContentTypeReply,
-          );
+        if (replyTo) {
+          await conversation.sendReply({
+            ...replyTo,
+            content: await encodeRemoteAttachment(remoteAttachment),
+          });
         } else {
-          void _sendMessage(
-            conversation,
-            remoteAttachment,
-            ContentTypeRemoteAttachment,
-          );
+          await conversation.sendRemoteAttachment(remoteAttachment);
         }
-      } else if (type === "text") {
-        if (activeMessage?.xmtpID) {
-          void _sendMessage(
-            conversation,
-            {
-              reference: activeMessage?.xmtpID,
-              content: message,
-              contentType: ContentTypeText,
-            } satisfies Reply,
-            ContentTypeReply,
-          );
+      } else if (type === "text" && typeof message === "string") {
+        if (replyTo) {
+          await conversation.sendReply({
+            ...replyTo,
+            content: await encodeText(message),
+          });
         } else {
-          void _sendMessage(conversation, message);
+          await conversation.sendText(message);
         }
       }
     },
-    [recipientOnNetwork, attachment, _sendMessage, activeMessage],
+    [recipientOnNetwork, attachment, activeMessage],
   );
 
-  return {
-    sendMessage,
-    loading: isLoading,
-    error,
-  };
+  return { sendMessage };
 };
 
 export default useSendMessage;

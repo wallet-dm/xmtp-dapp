@@ -23,7 +23,7 @@ interface MessagePreviewCardProps {
   /**
    * What is the wallet address associated with the message?
    */
-  address: string;
+  address?: string;
   /**
    * What is the datetime of the message
    */
@@ -55,11 +55,11 @@ interface MessagePreviewCardProps {
   /**
    * Method to reset tab
    */
-  setActiveTab: (tab: ActiveTab) => void;
+  setActiveTab?: (tab: ActiveTab) => void;
   /**
-   * Method to allow an address
+   * Method to allow this conversation
    */
-  allow: (address: string[]) => Promise<void>;
+  allow?: () => Promise<void>;
 }
 
 export const MessagePreviewCard = ({
@@ -95,7 +95,7 @@ export const MessagePreviewCard = ({
         }
       }}
       tabIndex={0}>
-      <Avatar url={avatarUrl} address={address} isLoading={isLoading} />
+      <Avatar url={avatarUrl} address={address ?? ""} isLoading={isLoading} />
       <div
         className={classNames(
           "flex flex-col items-start w-3/4 ml-3",
@@ -141,8 +141,8 @@ export const MessagePreviewCard = ({
               type="button"
               className="text-indigo-600 font-bold text-md"
               onClick={() => {
-                void allow([address]);
-                setActiveTab("messages");
+                void allow?.();
+                setActiveTab?.("messages");
               }}>
               {t("consent.unblock")}
             </button>

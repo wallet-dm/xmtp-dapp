@@ -1,11 +1,6 @@
 import type { KeyboardEventHandler } from "react";
-import { useMemo, useCallback } from "react";
-import type {
-  Attachment,
-  RemoteAttachment,
-} from "@xmtp/content-type-remote-attachment";
-import type { CachedMessage } from "@xmtp/react-sdk";
-import { useAttachment } from "@xmtp/react-sdk";
+import { useCallback, useMemo } from "react";
+import type { Attachment, RemoteAttachment } from "@xmtp/browser-sdk";
 import Zoom from "react-medium-image-zoom";
 import { useTranslation } from "react-i18next";
 import { PaperClipIcon } from "@heroicons/react/outline";
@@ -13,10 +8,11 @@ import {
   getContentTypeFromFileName,
   humanFileSize,
 } from "../../../helpers/attachments";
+import useRemoteAttachment from "../../../hooks/useRemoteAttachment";
 import "react-medium-image-zoom/dist/styles.css";
 
 type RemoteAttachmentMessageTileProps = {
-  message: CachedMessage;
+  remoteAttachment: RemoteAttachment;
   isSelf: boolean;
 };
 
@@ -28,30 +24,31 @@ type RemoteAttachmentMessageTileProps = {
 const blobCache = new WeakMap<Uint8Array, string>();
 
 const getBlobUrl = (attachment: Attachment) => {
-  if (!blobCache.get(attachment.data)) {
+  if (!blobCache.get(attachment.content)) {
     blobCache.set(
-      attachment.data,
+      attachment.content,
       URL.createObjectURL(
-        new Blob([Buffer.from(attachment.data)], {
+        new Blob([Buffer.from(attachment.content)], {
           type: attachment.mimeType,
         }),
       ),
     );
   }
 
-  return blobCache.get(attachment.data);
+  return blobCache.get(attachment.content);
 };
 
 const RemoteAttachmentMessageTile = ({
-  message,
+  remoteAttachment,
   isSelf,
 }: RemoteAttachmentMessageTileProps) => {
   const { t } = useTranslation();
-  const { attachment, status, load } = useAttachment(message);
-  const remoteAttachmentData = message.content as RemoteAttachment;
-  const fileSize = humanFileSize(remoteAttachmentData.contentLength);
+  const { attachment, status, load } = useRemoteAttachment(remoteAttachment);
+  const fileSize = humanFileSize(remoteAttachment.contentLength);
 
-  const contentType = getContentTypeFromFileName(remoteAttachmentData.filename);
+  const contentType = getContentTypeFromFileName(
+    remoteAttachment.filename ?? "",
+  );
 
   const blobUrl = useMemo(() => {
     if (attachment) {
@@ -73,7 +70,7 @@ const RemoteAttachmentMessageTile = ({
     [handleReload],
   );
 
-  const hasError = status === "error" || message.hasLoadError;
+  const hasError = status === "error";
 
   return hasError ? (
     <div
@@ -115,7 +112,7 @@ const RemoteAttachmentMessageTile = ({
             <img
               src={blobUrl}
               className="max-h-80 rounded-lg"
-              alt={remoteAttachmentData.filename}
+              alt={remoteAttachment.filename}
             />
           ) : contentType === "audio" ? (
             <audio controls src={blobUrl} className="max-w-full">
@@ -125,7 +122,7 @@ const RemoteAttachmentMessageTile = ({
             <div className="flex font-bold underline">
               <PaperClipIcon width={16} />
               <a href={blobUrl} target="_blank" rel="noopener noreferrer">
-                {remoteAttachmentData.filename} ({fileSize})
+                {remoteAttachment.filename} ({fileSize})
               </a>
             </div>
           )}
@@ -136,7 +133,7 @@ const RemoteAttachmentMessageTile = ({
           className={`flex flex-col gap-1 ${
             isSelf ? "items-end" : "items-start"
           }`}>
-          {remoteAttachmentData.filename} - {fileSize}
+          {remoteAttachment.filename} - {fileSize}
           <div
             role="button"
             tabIndex={0}

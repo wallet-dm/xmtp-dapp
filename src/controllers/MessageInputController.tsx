@@ -1,8 +1,8 @@
-import type { Attachment } from "@xmtp/content-type-remote-attachment";
-import { useStartConversation } from "@xmtp/react-sdk";
+import type { Attachment } from "@xmtp/browser-sdk";
 import { MessageInput } from "../component-library/components/MessageInput/MessageInput";
-import useSendMessage from "../hooks/useSendMessage";
 import useSelectedConversation from "../hooks/useSelectedConversation";
+import useSendMessage from "../hooks/useSendMessage";
+import useStartConversation from "../hooks/useStartConversation";
 import { useXmtpStore } from "../store/xmtp";
 
 interface MessageInputControllerProps {
@@ -20,7 +20,6 @@ export const MessageInputController = ({
   setAttachmentPreview,
   setIsDragActive,
 }: MessageInputControllerProps) => {
-  // XMTP Hooks
   const conversation = useSelectedConversation();
 
   const recipientOnNetwork = useXmtpStore((s) => s.recipientOnNetwork);

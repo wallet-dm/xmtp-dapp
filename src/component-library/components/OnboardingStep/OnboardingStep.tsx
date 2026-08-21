@@ -24,10 +24,6 @@ interface OnboardingStepProps {
    */
   onCreate?: () => void;
   /**
-   * What function should be run to enable an XMTP identity?
-   */
-  onEnable?: () => void;
-  /**
    * What function should be run to disconnect a wallet?
    */
   onDisconnect?: () => void;
@@ -38,7 +34,6 @@ export const OnboardingStep = ({
   isLoading,
   onConnect,
   onCreate,
-  onEnable,
   onDisconnect,
 }: OnboardingStepProps) => {
   const { t } = useTranslation();
@@ -60,9 +55,6 @@ export const OnboardingStep = ({
           </div>
         )}
         <div className="mt-[-100px] md:mt-0 z-50">
-          {step > 1 ? (
-            <p className="pt-4">{t("common.step_of_2", { NUM: step - 1 })}</p>
-          ) : null}
           <h1
             className="text-4xl font-bold p-4 pt-0"
             data-testid={step === 1 && "no-wallet-connected-header"}>
@@ -74,13 +66,7 @@ export const OnboardingStep = ({
             <Trans i18nKey={subheader ?? ""} />
           </p>
           <div>
-            {cta === ctaStep.ENABLE ? (
-              <PillButton
-                label={t("onboarding.enable_button")}
-                onClick={onEnable}
-                testId="enable-xmtp-identity-cta"
-              />
-            ) : cta === ctaStep.CREATE ? (
+            {cta === ctaStep.CREATE ? (
               <PillButton
                 label={t("onboarding.create_button")}
                 onClick={onCreate}

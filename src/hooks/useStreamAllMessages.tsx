@@ -1,52 +1,79 @@
-import {
-  useStreamAllMessages as _useStreamAllMessages,
-  useConversation,
-  useStreamConsentList,
-} from "@xmtp/react-sdk";
-import type { DecodedMessage } from "@xmtp/react-sdk";
-import { useCallback, useRef } from "react";
-import { useAccount } from "wagmi";
+import { ConsentState, isText } from "@xmtp/browser-sdk";
+import { useEffect, useRef } from "react";
 import { shortAddress, truncate } from "../helpers";
-import { getCachedPeerAddressName } from "../helpers/conversation";
+import { resolveAddressesForInboxIds } from "../helpers/inboxIdentity";
+import { getPeerName } from "../store/identity";
+import type { AppMessage } from "../contexts/XmtpContext";
+import useXmtpClient from "./useXmtpClient";
 
+/**
+ * Raises a browser notification for inbound messages while the tab is hidden.
+ *
+ * Denied senders are filtered out at the stream rather than after the fact, so
+ * a blocked peer cannot raise a notification.
+ */
 const useStreamAllMessages = () => {
-  const { address: walletAddress } = useAccount();
-  const { getCachedByTopic } = useConversation();
+  const { client, status } = useXmtpClient();
   const latestMsgId = useRef<string>();
 
-  const onMessage = useCallback(
-    async (message: DecodedMessage) => {
+  useEffect(() => {
+    if (status !== "ready" || !client) {
+      return undefined;
+    }
+
+    let cancelled = false;
+    let stream: Awaited<
+      ReturnType<typeof client.conversations.streamAllMessages>
+    > | null = null;
+
+    const notify = async (message: AppMessage) => {
       if (
-        latestMsgId.current !== message.id &&
-        "Notification" in window &&
-        window.Notification.permission === "granted" &&
-        message.senderAddress !== walletAddress &&
-        document.hidden
+        latestMsgId.current === message.id ||
+        !("Notification" in window) ||
+        window.Notification.permission !== "granted" ||
+        message.senderInboxId === client.inboxId ||
+        !document.hidden
       ) {
-        // look for name in cached conversation
-        const cachedConversation = await getCachedByTopic(
-          message.conversation.topic,
-        );
-
-        if (cachedConversation) {
-          const name = getCachedPeerAddressName(cachedConversation);
-
-          // eslint-disable-next-line no-new
-          new window.Notification("XMTP", {
-            body: `${
-              name || shortAddress(message.senderAddress ?? "")
-            }\n${truncate(message.content as string, 75)}`,
-          });
-        }
-
-        latestMsgId.current = message.id;
+        return;
       }
-    },
-    [getCachedByTopic, walletAddress],
-  );
+      latestMsgId.current = message.id;
 
-  void _useStreamAllMessages(onMessage);
-  void useStreamConsentList();
+      const addresses = await resolveAddressesForInboxIds(client, [
+        message.senderInboxId,
+      ]);
+      const address = addresses[message.senderInboxId];
+      const sender =
+        getPeerName(address) ?? shortAddress(address ?? message.senderInboxId);
+
+      // only text previews well in a notification body
+      const body = isText(message) ? truncate(message.content ?? "", 75) : "";
+
+      // eslint-disable-next-line no-new
+      new window.Notification("XMTP", { body: `${sender}\n${body}` });
+    };
+
+    const open = async () => {
+      const opened = await client.conversations.streamAllMessages({
+        consentStates: [ConsentState.Allowed, ConsentState.Unknown],
+        onValue: (message) => {
+          void notify(message);
+        },
+      });
+      if (cancelled) {
+        void opened.end();
+        return;
+      }
+      stream = opened;
+    };
+
+    void open();
+
+    return () => {
+      cancelled = true;
+      void stream?.end();
+      stream = null;
+    };
+  }, [client, status]);
 };
 
 export default useStreamAllMessages;

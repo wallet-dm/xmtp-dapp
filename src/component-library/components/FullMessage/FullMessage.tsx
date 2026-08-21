@@ -1,9 +1,9 @@
-import type { CachedConversation, CachedMessageWithId } from "@xmtp/react-sdk";
-import { useReplies, useResendMessage } from "@xmtp/react-sdk";
-import type { KeyboardEventHandler, PropsWithChildren } from "react";
-import { useCallback, useMemo, useState } from "react";
+import { DeliveryStatus } from "@xmtp/browser-sdk";
+import type { PropsWithChildren } from "react";
+import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { classNames } from "../../../helpers";
+import type { AppDm, AppMessage } from "../../../contexts/XmtpContext";
 import { useXmtpStore } from "../../../store/xmtp";
 import { DateDivider } from "../DateDivider/DateDivider";
 import { ReplyBar } from "../ReplyBar/ReplyBar";
@@ -13,14 +13,12 @@ interface MessageSender {
   isSelf?: boolean;
 }
 
-const enterKey = "Enter";
-
 type FullMessageProps = PropsWithChildren & {
-  message: CachedMessageWithId;
+  message: AppMessage;
   /**
    * what conversation is the message part of?
    */
-  conversation: CachedConversation;
+  conversation: AppDm;
   /**
    * who is the message from?
    */
@@ -37,13 +35,15 @@ type FullMessageProps = PropsWithChildren & {
    * Is this message a reply?
    */
   isReply?: boolean;
+  /**
+   * Does this message have replies in the loaded conversation?
+   */
+  hasReplies?: boolean;
 };
 
 const incomingMessageBackgroundStyles = "bg-gray-200 rounded-br-lg pl-2";
 const outgoingMessageBackgroundStyles =
   "bg-indigo-600 text-white rounded-bl-lg message-sender";
-const errorMessageBackgroundStyles =
-  "bg-white rounded-bl-lg pl-2 border-gray-200 border";
 
 export const FullMessage = ({
   children,
@@ -53,49 +53,22 @@ export const FullMessage = ({
   datetime,
   showDateDivider = false,
   isReply,
+  hasReplies = false,
 }: FullMessageProps) => {
   const { t } = useTranslation();
-  const { resend, cancel } = useResendMessage();
   const [onHover, setOnHover] = useState(false);
 
   const setActiveMessage = useXmtpStore((s) => s.setActiveMessage);
-  const replies = useReplies(message);
 
-  const handleResend = useCallback(() => {
-    void resend(message);
-  }, [message, resend]);
+  const failedToSend = message.deliveryStatus === DeliveryStatus.Failed;
 
-  const handleResendKeyDown = useCallback<KeyboardEventHandler<HTMLDivElement>>(
-    (e) => {
-      if (e.key === enterKey) {
-        void handleResend();
-      }
-    },
-    [handleResend],
+  const messageBackgroundStyles = useMemo(
+    () =>
+      from.isSelf
+        ? outgoingMessageBackgroundStyles
+        : incomingMessageBackgroundStyles,
+    [from.isSelf],
   );
-
-  const handleCancel = useCallback(() => {
-    void cancel(message);
-  }, [message, cancel]);
-
-  const handleCancelKeyDown = useCallback<KeyboardEventHandler<HTMLDivElement>>(
-    (e) => {
-      if (e.key === enterKey) {
-        void handleCancel();
-      }
-    },
-    [handleCancel],
-  );
-
-  const messageBackgroundStyles = useMemo(() => {
-    if (message.hasLoadError) {
-      return errorMessageBackgroundStyles;
-    }
-    if (from.isSelf) {
-      return outgoingMessageBackgroundStyles;
-    }
-    return incomingMessageBackgroundStyles;
-  }, [from.isSelf, message.hasLoadError]);
 
   const alignmentStyles = from.isSelf
     ? "items-end justify-end"
@@ -146,33 +119,15 @@ export const FullMessage = ({
               "text-xs text-gray-500 w-full flex",
               alignmentStyles,
             )}>
-            {message.hasSendError ? (
+            {failedToSend ? (
               <div className="text-red-600 flex align-center font-bold gap-1">
                 <div>{t("messages.message_not_delivered")}</div>
-                <div>&bull;</div>
-                <div
-                  role="button"
-                  tabIndex={0}
-                  className="underline"
-                  onKeyDown={handleResendKeyDown}
-                  onClick={handleResend}>
-                  {t("messages.message_retry")}
-                </div>
-                <div>&bull;</div>
-                <div
-                  role="button"
-                  tabIndex={0}
-                  className="underline"
-                  onKeyDown={handleCancelKeyDown}
-                  onClick={handleCancel}>
-                  {t("messages.message_cancel")}
-                </div>
               </div>
             ) : (
               t("{{datetime, time}}", { datetime })
             )}
           </div>
-          {replies.length && !isReply ? (
+          {hasReplies && !isReply ? (
             <button
               type="button"
               onClick={() => setActiveMessage(message)}

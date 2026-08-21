@@ -1,12 +1,14 @@
 import { useDisconnect } from "wagmi";
-import { useClient } from "@xmtp/react-sdk";
 import SideNav from "../component-library/components/SideNav/SideNav";
 import type { ETHAddress } from "../helpers";
-import { wipeKeys } from "../helpers";
+import useXmtpClient from "../hooks/useXmtpClient";
 import { useXmtpStore } from "../store/xmtp";
 
 export const SideNavController = () => {
-  const { client, disconnect } = useClient();
+  const { client, disconnect } = useXmtpClient();
+  const walletAddress = client?.accountIdentifier?.identifier as
+    | ETHAddress
+    | undefined;
   const resetXmtpState = useXmtpStore((s) => s.resetXmtpState);
   const clientName = useXmtpStore((s) => s.clientName);
   const clientAvatar = useXmtpStore((s) => s.clientAvatar);
@@ -15,13 +17,12 @@ export const SideNavController = () => {
 
   return (
     <SideNav
-      displayAddress={clientName ?? client?.address}
-      walletAddress={client?.address as ETHAddress | undefined}
+      displayAddress={clientName ?? walletAddress}
+      walletAddress={walletAddress}
       avatarUrl={clientAvatar || ""}
       onDisconnect={() => {
         void disconnect();
         disconnectWagmi();
-        wipeKeys(client?.address ?? "");
         resetWagmi();
         resetXmtpState();
       }}

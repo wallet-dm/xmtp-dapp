@@ -5,7 +5,7 @@ import { useXmtpStore } from "../store/xmtp";
 
 export const HeaderDropdownController = () => {
   const resetRecipient = useXmtpStore((s) => s.resetRecipient);
-  const setConversationTopic = useXmtpStore((s) => s.setConversationTopic);
+  const setConversationId = useXmtpStore((s) => s.setConversationId);
   const setStartedFirstMessage = useXmtpStore((s) => s.setStartedFirstMessage);
   const [width] = useWindowSize();
 
@@ -13,7 +13,7 @@ export const HeaderDropdownController = () => {
     <HeaderDropdown
       onClick={() => {
         resetRecipient();
-        setConversationTopic();
+        setConversationId();
         setStartedFirstMessage(true);
       }}
       isMobileView={width <= TAILWIND_MD_BREAKPOINT}

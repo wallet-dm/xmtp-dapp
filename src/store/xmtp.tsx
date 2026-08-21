@@ -1,4 +1,4 @@
-import type { CachedMessageWithId } from "@xmtp/react-sdk";
+import type { AppMessage } from "../contexts/XmtpContext";
 import { create } from "zustand";
 import type { ETHAddress } from "../helpers";
 
@@ -11,6 +11,11 @@ export type RecipientAddress = ETHAddress | null;
 interface XmtpState {
   loadingConversations: boolean;
   setLoadingConversations: (loadingConversations: boolean) => void;
+  hasConversations: boolean;
+  setHasConversations: (hasConversations: boolean) => void;
+  /** bumped when a conversation is created locally, to re-list */
+  conversationsRevision: number;
+  refreshConversations: () => void;
   clientName: string | null;
   setClientName: (name: string | null) => void;
   clientAvatar: string | null;
@@ -27,16 +32,18 @@ interface XmtpState {
   setRecipientState: (state: RecipientState) => void;
   recipientOnNetwork: boolean;
   setRecipientOnNetwork: (onNetwork: boolean) => void;
-  conversationTopic?: string;
-  setConversationTopic: (conversationTopic?: string) => void;
+  conversationId?: string;
+  setConversationId: (conversationId?: string) => void;
   resetXmtpState: () => void;
   resetRecipient: () => void;
   startedFirstMessage: boolean;
   setStartedFirstMessage: (startedFirstMessage: boolean) => void;
   attachmentError: string;
   setAttachmentError: (attachmentError: string) => void;
-  activeMessage?: CachedMessageWithId;
-  setActiveMessage: (message?: CachedMessageWithId) => void;
+  sendError: string;
+  setSendError: (sendError: string) => void;
+  activeMessage?: AppMessage;
+  setActiveMessage: (message?: AppMessage) => void;
   activeTab: ActiveTab;
   setActiveTab: (activeTab: ActiveTab) => void;
   changedConsentCount: number;
@@ -47,6 +54,14 @@ export const useXmtpStore = create<XmtpState>((set) => ({
   loadingConversations: true,
   setLoadingConversations: (loadingConversations: boolean) =>
     set(() => ({ loadingConversations })),
+  hasConversations: false,
+  setHasConversations: (hasConversations: boolean) =>
+    set(() => ({ hasConversations })),
+  conversationsRevision: 0,
+  refreshConversations: () =>
+    set((state) => ({
+      conversationsRevision: state.conversationsRevision + 1,
+    })),
   clientName: null,
   setClientName: (name) => set(() => ({ clientName: name })),
   clientAvatar: null,
@@ -64,9 +79,8 @@ export const useXmtpStore = create<XmtpState>((set) => ({
   recipientOnNetwork: false,
   setRecipientOnNetwork: (onNetwork) =>
     set(() => ({ recipientOnNetwork: onNetwork })),
-  conversationTopic: "",
-  setConversationTopic: (conversationTopic) =>
-    set(() => ({ conversationTopic })),
+  conversationId: "",
+  setConversationId: (conversationId) => set(() => ({ conversationId })),
   resetXmtpState: () =>
     set(() => ({
       client: undefined,
@@ -75,7 +89,7 @@ export const useXmtpStore = create<XmtpState>((set) => ({
       recipientName: null,
       recipientAvatar: null,
       recipientState: "invalid",
-      conversationTopic: undefined,
+      conversationId: undefined,
       startedFirstMessage: false,
     })),
   resetRecipient: () =>
@@ -91,6 +105,8 @@ export const useXmtpStore = create<XmtpState>((set) => ({
     set(() => ({ startedFirstMessage })),
   attachmentError: "",
   setAttachmentError: (attachmentError) => set(() => ({ attachmentError })),
+  sendError: "",
+  setSendError: (sendError) => set(() => ({ sendError })),
   activeMessage: undefined,
   setActiveMessage: (activeMessage) => set(() => ({ activeMessage })),
   activeTab: "messages",

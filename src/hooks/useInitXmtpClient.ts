@@ -1,337 +1,93 @@
-import type { ClientOptions } from "@xmtp/react-sdk";
-import { Client, useClient, useCanMessage } from "@xmtp/react-sdk";
-import { useEffect, useMemo, useRef, useState, useCallback } from "react";
-import { useConnect, useWalletClient } from "wagmi";
-import type { WalletClient } from "viem";
+import { useCallback, useEffect } from "react";
+import { useConnect } from "wagmi";
 import type { ETHAddress } from "../helpers";
 import {
-  getAppVersion,
-  getEnv,
   isAppEnvDemo,
-  loadKeys,
-  storeKeys,
   throttledFetchAddressName,
   throttledFetchEnsAvatar,
 } from "../helpers";
 import { mockConnector } from "../helpers/mockConnector";
 import { useXmtpStore } from "../store/xmtp";
-import { useDivviReferral } from "./useDivviReferral";
-import "wagmi/window";
+import useXmtpClient from "./useXmtpClient";
 
-type ClientStatus = "new" | "created" | "enabled";
-
-type ResolveReject<T = void> = (value: T | PromiseLike<T>) => void;
-
-interface Ethereum {
-  request(args: {
-    method: string;
-    params: {
-      [snapName: string]: object;
-    };
-  }): Promise<{
-    [snapName: string]: {
-      enabled: boolean;
-    };
-  }>;
-}
 /**
- * This is a helper function for creating a new promise and getting access
- * to the resolve and reject callbacks for external use.
+ * Drives the onboarding screen.
+ *
+ * XMTP V3 needs a single signature to register an installation, replacing V2's
+ * create-identity-then-enable-identity pair. The externally-resolvable promises
+ * that used to sequence those two prompts are gone, and so is the local key
+ * storage they produced — browser-sdk keeps key material in its own database.
  */
-const makePromise = <T = void>() => {
-  let reject: ResolveReject<T> = () => {};
-  let resolve: ResolveReject<T> = () => {};
-  const promise = new Promise<T>((yes, no) => {
-    resolve = yes;
-    reject = no;
-  });
-  return {
-    promise,
-    reject,
-    resolve,
-  };
-};
-
-// XMTP client options
-const clientOptions = {
-  apiUrl: import.meta.env.VITE_XMTP_API_URL,
-  env: getEnv(),
-  appVersion: getAppVersion(),
-} as Partial<ClientOptions>;
-
 const useInitXmtpClient = () => {
-  // track if onboarding is in progress
-  const onboardingRef = useRef(false);
-  const walletClientRef = useRef<WalletClient | null>();
-  // XMTP address status
-  const [status, setStatus] = useState<ClientStatus | undefined>();
-  // is there a pending signature?
-  const [signing, setSigning] = useState(false);
-  const { data: walletClient } = useWalletClient();
+  const {
+    client,
+    status,
+    error,
+    register,
+    disconnect,
+    retry,
+    installations,
+    revokeInstallations,
+  } = useXmtpClient();
   const { connect: connectWallet } = useConnect();
   const setClientName = useXmtpStore((s) => s.setClientName);
   const setClientAvatar = useXmtpStore((s) => s.setClientAvatar);
 
-  const { getReferralDataSuffix } = useDivviReferral({
-    consumer: "0x4Fe3a15a89cbaA505305B2e3C2C7dD81Bf1DD4C9", // Replace with your Divvi Identifier
-    providers: [
-      "0x0423189886d7966f0dd7e7d256898daeee625dca",
-      "0xc95876688026be9d6fa7a7c33328bd013effa2bb",
-      "0x7beb0e14f8d2e6f6678cc30d867787b384b19e20",
-    ],
-  });
-
-  /**
-   * In order to have more granular control of the onboarding process, we must
-   * create promises that we can resolve externally. These promises will allow
-   * us to control when the user is prompted for signatures during the account
-   * creation process.
-   */
-
-  // create promise, callback, and resolver for controlling the display of the
-  // create account signature.
-  const { createResolve, preCreateIdentityCallback, resolveCreate } =
-    useMemo(() => {
-      const { promise: createPromise, resolve } = makePromise();
-      return {
-        createResolve: resolve,
-        preCreateIdentityCallback: () => createPromise,
-        // executing this function will result in displaying the create account
-        // signature prompt
-        resolveCreate: () => {
-          createResolve();
-          setSigning(true);
-        },
-      };
-      // if the walletClient changes during the onboarding process, reset the promise
-      // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [walletClient]);
-
-  // create promise, callback, and resolver for controlling the display of the
-  // enable account signature.
-  const { enableResolve, preEnableIdentityCallback, resolveEnable } =
-    useMemo(() => {
-      const { promise: enablePromise, resolve } = makePromise();
-      return {
-        enableResolve: resolve,
-        // this is called right after signing the create identity signature
-        preEnableIdentityCallback: () => {
-          setSigning(false);
-          setStatus("created");
-          return enablePromise;
-        },
-        // executing this function will result in displaying the enable account
-        // signature prompt
-        resolveEnable: () => {
-          enableResolve();
-          setSigning(true);
-        },
-      };
-      // if the walletClient changes during the onboarding process, reset the promise
-      // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [walletClient]);
-
-  const { client, isLoading, initialize } = useClient();
-  const { canMessageStatic: canMessageUser } = useCanMessage();
-
-  // if this is an app demo, connect to the temporary wallet
+  // demo builds connect to a throwaway wallet so no signature is needed
   useEffect(() => {
     if (isAppEnvDemo()) {
       connectWallet({ connector: mockConnector });
     }
-    if (!client) {
-      setStatus(undefined);
-    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Create a wrapper that modifies the transaction data
-  const getModifiedWalletClient = useCallback(async () => {
-    if (!walletClient) return null;
-
-    const dataSuffix = await getReferralDataSuffix();
-
-    // Create a modified version of the wallet client
-    const modifiedClient = {
-      ...walletClient,
-      sendTransaction: async (args: any) => {
-        // Append referral data to the transaction data
-        const modifiedArgs = {
-          ...args,
-          data: args.data + dataSuffix,
-        };
-        return walletClient.sendTransaction(modifiedArgs);
-      },
-    };
-
-    // Note: We need to use type assertions here because of version mismatches between
-    // the viem types used by XMTP and our project. This is a temporary solution until
-    // we can align the versions.
-    return modifiedClient as any;
-  }, [walletClient, getReferralDataSuffix]);
-
-  // the code in this effect should only run once
+  // Demo builds sign with a throwaway wallet, so there is no prompt to gate
+  // and no CTA on the demo onboarding step. Register as soon as the client
+  // reports it needs to, or the flow stalls before it is usable.
   useEffect(() => {
-    const updateStatus = async () => {
-      // onboarding is in progress
-      if (onboardingRef.current) {
-        // the walletClient has changed, restart the onboarding process
-        if (walletClient !== walletClientRef.current) {
-          setStatus(undefined);
-          setSigning(false);
-        } else {
-          // onboarding in progress and walletClient is the same, do nothing
-          return;
-        }
+    if (isAppEnvDemo() && status === "unregistered") {
+      void register();
+    }
+  }, [status, register]);
+
+  // resolve the connected account's name and avatar for the side nav
+  useEffect(() => {
+    const address = client?.accountIdentifier?.identifier;
+    if (status !== "ready" || !address) {
+      return;
+    }
+
+    const resolveIdentity = async () => {
+      const name = await throttledFetchAddressName(address as ETHAddress);
+      if (!name) {
+        return;
       }
-      // skip this if we already have a client and ensure we have a walletClient
-      if (!client && walletClient) {
-        onboardingRef.current = true;
-        const { address } = walletClient.account;
-        let keys: Uint8Array | undefined = loadKeys(address);
-        // check if we already have the keys
-        if (keys) {
-          // resolve client promises
-          createResolve();
-          enableResolve();
-          // no signatures needed
-          setStatus("enabled");
-        } else {
-          // demo mode, wallet won't require any signatures
-          if (isAppEnvDemo()) {
-            // resolve client promises
-            createResolve();
-            enableResolve();
-          } else {
-            // no keys found, but maybe the address has already been created
-            // let's check
-            const canMessage = await canMessageUser(address, clientOptions);
-            if (canMessage) {
-              // resolve client promise
-              createResolve();
-              // identity has been created
-              setStatus("created");
-            } else {
-              // no identity on the network
-              setStatus("new");
-            }
-          }
-
-          if (window.ethereum?.isMetaMask) {
-            // Snaps flow — TODO: move to SDK side after ironing out all edge cases.
-            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call
-            const browserSupportSnaps = await Client.isSnapsReady();
-            if (browserSupportSnaps) {
-              try {
-                const result = await (
-                  window.ethereum as unknown as Ethereum
-                ).request({
-                  method: "wallet_requestSnaps",
-                  params: {
-                    "npm:@xmtp/snap": {},
-                  },
-                });
-
-                if (result && result?.["npm:@xmtp/snap"].enabled) {
-                  createResolve();
-                  enableResolve();
-                  setStatus("enabled");
-
-                  keys = undefined;
-                  clientOptions.useSnaps = true;
-                  clientOptions.preCreateIdentityCallback =
-                    preCreateIdentityCallback;
-                  clientOptions.preEnableIdentityCallback =
-                    preEnableIdentityCallback;
-                } else if (result && !result.enabled) {
-                  throw new Error("snaps not enabled with XMTP");
-                }
-              } catch (error) {
-                await updateStatus();
-              }
-            } else {
-              await updateStatus();
-            }
-          } else {
-            try {
-              // Get modified wallet client with referral data
-              const modifiedClient = await getModifiedWalletClient();
-
-              if (!modifiedClient) {
-                throw new Error("Failed to create modified wallet client");
-              }
-
-              // get client keys with referral data
-              // Note: Using type assertion here due to viem version mismatch
-              keys = await Client.getKeys(modifiedClient as any, {
-                ...clientOptions,
-                skipContactPublishing: true,
-                persistConversations: false,
-                preCreateIdentityCallback,
-                preEnableIdentityCallback,
-              });
-
-              setStatus("enabled");
-              setSigning(false);
-              storeKeys(address, keys);
-            } catch (error) {
-              console.error(
-                "Error initializing XMTP client with referral:",
-                error,
-              );
-              // Fallback to regular initialization if referral fails
-              keys = await Client.getKeys(walletClient as any, {
-                ...clientOptions,
-                skipContactPublishing: true,
-                persistConversations: false,
-                preCreateIdentityCallback,
-                preEnableIdentityCallback,
-              });
-              setStatus("enabled");
-              setSigning(false);
-              storeKeys(address, keys);
-            }
-          }
-        }
-        // initialize client
-        const xmtpClient = await initialize({
-          keys,
-          options: clientOptions,
-          // @ts-expect-error types
-          signer: walletClient,
-        });
-        if (xmtpClient) {
-          const name = await throttledFetchAddressName(
-            xmtpClient.address as ETHAddress,
-          );
-          if (name) {
-            const avatar = await throttledFetchEnsAvatar({
-              name,
-            });
-            setClientAvatar(avatar);
-            setClientName(name);
-          }
-        }
-
-        onboardingRef.current = false;
+      setClientName(name);
+      try {
+        setClientAvatar(await throttledFetchEnsAvatar({ name }));
+      } catch {
+        // an NFT-backed ENS avatar can fail CORS; the name is enough
+        setClientAvatar(null);
       }
     };
-    void updateStatus();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [client, walletClient, getModifiedWalletClient]);
 
-  // it's important that this effect runs last
-  useEffect(() => {
-    walletClientRef.current = walletClient;
-  }, [walletClient]);
+    void resolveIdentity();
+  }, [client, status, setClientAvatar, setClientName]);
+
+  const resolveCreate = useCallback(() => {
+    void register();
+  }, [register]);
 
   return {
     client,
-    isLoading: isLoading || signing,
+    error,
+    isLoading: status === "building" || status === "signing",
     resolveCreate,
-    resolveEnable,
     status,
-    setStatus,
+    retry,
+    disconnect,
+    installations,
+    revokeInstallations,
   };
 };
 
